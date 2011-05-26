@@ -1,7 +1,7 @@
 var http = require('http');
 var url = require('url');
 
-var start = function(respond, config) {
+var start = function(respond, options) {
     var onRequest = function(req, res) {
         var uri_path = url.parse(req.url).pathname,
             http_POST = '';
@@ -17,7 +17,7 @@ var start = function(respond, config) {
         });
     }
 
-    http.createServer(onRequest).listen(config.server.port);
+    http.createServer(onRequest).listen(options.server.port);
     console.log("Server started.");
 }
 

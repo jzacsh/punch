@@ -1,7 +1,7 @@
-var config = {
+var options = {
     server: {
         port: 8888,
     }
 };
 
-exports.config = config;
+exports.options = options;
