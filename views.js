@@ -17,7 +17,10 @@ handlers['/stop'] = function(response, http_POST) {
     console.log('request handler for "stop" was called.');
     response.writeHead(200, { 'Content-Type': 'text/html' });
     response.write('hello from stop handler.');
-    response.write('Received note: ' + querystring.parse(http_POST)['note']);
+    var note = querystring.parse(http_POST)['note'];
+    if (typeof note !== 'undefined') {
+        response.write('Received note: ' + note);
+    }
     response.end();
 };
 handlers['/403'] = function(response, http_POST) {
