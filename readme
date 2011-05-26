@@ -1,0 +1,2 @@
+a simple node.js service to punch in/out of an activity to keep track of time.
+previously written as a bash script at git://github.com/jzacsh/bin.git share/punch
