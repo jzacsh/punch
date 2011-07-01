@@ -1,0 +1,664 @@
+#!/usr/bin/env bash
+
+ #@TODO:
+ # add a "update"/"note" function the update the note for a current punch-in.
+ # this should take into consideration multiple current punch-in's and prompt
+ # if necessary.
+
+# early conf ##################################################################
+
+#feel free to change this _default values:
+_CARD=~/.config/punchcard
+_DELIM=' '
+
+PUNCH_CARD=${PUNCH_CARD:-$_CARD}
+PUNCH_DELIM=${PUNCH_DELIM:-$_DELIM}
+OPT_CLEAN=${PUNCH_CLEAN:-'0'}
+OPT_PROJECT=${PUNCH_CLIENT}
+
+#see /usr/include/sysexits.h
+E_ERROR=1   #general error
+E_DIRTY=3   #general error
+E_USAGE=64  #command line usage error
+E_DATAF=65  #data format error
+E_NPERM=77  #configuration error
+E_CONFG=78  #configuration error
+
+# early fails: ################################################################
+#make sure sqlite3 is available.
+if ! type sqlite3 &>/dev/null;then
+    echo "$(basename $0) relies on sqlite3, which was not found on this system." >&2
+    exit "$E_ERROR"
+fi
+
+#make sure bash version 4 is being used.
+if (( BASH_VERSINFO[0] < 4 ));then
+    printf '%s relies heavily on bash version 4 features.
+    Your bash version looks to be %s.' $(basename $0) "${BASH_VERSINFO[0]}" >&2
+    exit "$E_ERROR"
+fi
+
+# getops configuration: #######################################################
+declare -rA OPTS=(
+    [c:]='client  Specify the client/project being referenced, "__".'
+    [C]='List all clients/projects on punch-card. Exits immediately.'
+    [D:]='timestamp  Delete all in/out punch-card entries at epoch, "__".'
+    [h]='Help message.'
+    [L]='List all entries, for every project, on punch-card. Exits immediately.'
+    [l]='List all punch-card entries made under a project. See -c.'
+    [p]='Punch in/out for a "client"/"project" being referenced. See -c.'
+    [q]='Quiet mode, print minimal output and even fail quietly.'
+    [d]='Delete all punch-card entries made under a project. See -c.'
+    [s]='Output timestamps as epoch, intended as shell input. See eval(1p).'
+    [t]='Sum of total punch-card entries under project. See -c.'
+    [u]='Usage statement.'
+)
+
+# functions: ##################################################################
+
+NUMERIC_EXPR='^[0-9]+([.][0-9]+)?$'
+
+error() {
+    (( OPT_QUIET )) || echo -e "Error: ${@}" >&2
+}
+
+die() {
+    exit ${1:-'0'}
+}
+
+help() {
+    #print the regular usage
+    usage
+    echo
+
+    #build the help section
+    declare -a HELP
+    local i=0
+    for opt in "${!OPTS[@]}"; do
+        HELP[$i]=${opt/:/}
+        ((++i))
+    done
+    i=0
+    for opt in "${OPTS[@]}"; do
+        local keyword=${opt%%  *}
+        keyword=${keyword^^}
+        local explain=${opt/'__'/$keyword}
+        HELP[$i]="-${HELP[$i]}\t${explain/  / - }"
+        ((++i))
+    done
+
+    #print help section
+    echo "\
+    OPTIONS:" >&2
+    for help in "${HELP[@]}"; do
+        echo -e "\t$help" >&2
+    done
+
+    die $1
+}
+
+usage() {
+    local _n=$(basename $0)
+    local flags=$(
+        for opt in ${!OPTS[@]}; do
+            [[ ${opt:1:1} = : ]] || echo -n $opt
+        done
+    )
+    local i=0 n x=0
+    local argflags=$(
+        for opt in ${!OPTS[@]}; do
+            if [[ ${opt:1:1} = : ]];then
+                (( x )) && OR=' | '
+                echo -en "$OR-${opt/:/} "
+                n=0
+                for arg in "${OPTS[@]}"; do
+                    if (( n == i ));then
+                        arg=${arg%% *}
+                        echo -en "${arg,,}"
+                        break;
+                    fi
+                    ((++n))
+                done
+                ((++x))
+            fi
+            ((++i))
+        done
+    )
+
+    echo "$_n [$flags] [ $argflags ] [ note... ]
+    Simple punch card utility, lets you punch in, out and get paid.
+
+    ${_n^} generally takes a client/subject of what you're working *for* and
+    optionaly a quick note of what you're working *on*, then stores a timestamp
+    in your local punch-card database.
+
+    Called with no arguments ${_n^} prints your current time on the clock.
+
+    ENVIRONMENT VARIABLES
+        PUNCH_CARD   - Location of your punch-card database. Defaults to $_CARD.
+        PUNCH_DELIM  - Field delimeter for data output. Defaults to '$_DELIM'.
+        PUNCH_CLEAN  - Set to '1' enables stamp output for times. See -s.
+        PUNCH_CLIENT - Client/Project name to use. See -c." >&2
+
+    (( $# )) && die ${@}
+}
+
+# helpers: ####################################################################
+
+## schema: ###################################
+#   unix timestamp of the "punch"
+# - punch       INTEGER NOT NULL PRIMARY KEY,
+#
+#   0 or 1. 0: punched out; 1: punch in
+# - status      INTEGER NOT NULL,
+#
+#   project/client for which this work is for.
+# - project     TEXT NOT NULL,
+#
+#   optional text note describing this work.
+# - note        TEXT
+##############################################
+DB_TABLE_NAME='punchcard'
+DB_CREATE_TABLE="
+CREATE TABLE $DB_TABLE_NAME (
+    punch       INTEGER NOT NULL PRIMARY KEY,
+    status      INTEGER NOT NULL,
+    project     TEXT NOT NULL,
+    note        TEXT
+);
+"
+
+db_sql() {
+    local opts=' '
+#   (( OPT_QUIET )) && opts='-noheader' || opts="-header"
+
+    #run query
+    sqlite3 $opts \
+        -separator "$PUNCH_DELIM" \
+        $PUNCH_CARD "${@}"
+}
+
+db_out_sanitize() {
+    while read line;do
+        [[ -n $line ]] && echo "$line"
+    done
+}
+
+create_db() {
+    (( OPT_QUIET )) && return $E_CONFG
+    local initialize
+    echo -en "Would you like to initialize a punch-card, here:
+\t$PUNCH_CARD ?"
+    local prompt=" [Y\n]  "
+    read -p $prompt initialize
+    [[ -z $initialize || ${initialize,,} = y ]] || return $E_CONFG
+    db_sql "$DB_CREATE_TABLE"
+}
+
+# punchcard tools: ############################################################
+
+init_storage() {
+    if [[ $(file -bL $PUNCH_CARD 2>/dev/null | grep -i 'sqlite') ]];then
+        #punch card looks like an sqlite file.
+        if [[ ! -w $PUNCH_CARD ]];then
+            error "No write-access to punch-card."
+            die $E_NPERM
+        fi
+    else
+        #punch card does not look like an sqlite file.
+        if [[ -f $PUNCH_CARD ]];then
+            #punch card at least likes like _some_ kind of file.
+            if (( 10#$(stat -L --printf='%s' $PUNCH_CARD 2>/dev/null) ));then
+                #punch card has something else in it.
+                error "Punch-card does not seem to be an sqlite3 database:\n\t$(file -L $PUNCH_CARD)"
+                die $E_CONFG
+            else
+                #punch card is an empty file. create tables?
+                error "Punch-card is not yet formatted."
+                [[ -w $PUNCH_CARD && -r $PUNCH_CARD ]] && create_db || die $?
+            fi
+        else
+            #punch card does not exist. create it?
+            error "Could not find punch-card\n\twas expecting: '$PUNCH_CARD'."
+            [[ -w $(dirname $PUNCH_CARD) ]] && create_db || die $?
+        fi
+    fi
+}
+
+check_schema() {
+    #@TODO: this if fragile. there must be a _proper_, standard way to do this.
+    # this will fail if even the columns are created in a different order.
+    if [[ $(diff -u <(echo "$DB_CREATE_TABLE" | db_out_sanitize) <(db_sql ".schema $DB_TABLE_NAME" | db_out_sanitize)) ]];then
+        error "Punch-card does not seem to be in proper format:\n\t$PUNCH_CARD"
+        die $E_DATAF
+    fi
+}
+
+need_client() {
+    if [[ -z $OPT_PROJECT ]];then
+        error "Client not specified, expected -c. See -h for more."
+        die $E_USAGE
+    fi
+}
+
+current() {
+    local q stat stamp note verbage=''
+
+    while read project;do
+        q="
+            SELECT status, punch, note
+            FROM $DB_TABLE_NAME
+            WHERE project='$project'
+            ORDER BY punch DESC
+            LIMIT 0,1
+        ;"
+        db_sql "$q" | {
+            read $PUNCH_DELIM stat stamp note
+            (( stat )) || continue
+            stamp=$(( 10#$(date +%s) - stamp ))
+            (( OPT_CLEAN )) && time=$stamp || time=$(date_fmt_colon $stamp)
+            if (( OPT_QUIET ));then
+                verbage=''
+            else
+                if [[ -n "$note" ]];then
+                    verbage="${PUNCH_DELIM}note: '${note}'"
+                else
+                    verbage=''
+                fi
+            fi
+            printf "%s%s%s%s\n" \
+                "$project" "$PUNCH_DELIM" "$time" "$verbage"
+        }
+    done < <(db_sql "SELECT DISTINCT project FROM $DB_TABLE_NAME;")
+}
+
+delete() {
+    local exists=$(db_sql "SELECT count(1) FROM $DB_TABLE_NAME WHERE project='$OPT_PROJECT';")
+    (( exists )) || error "No punches for any project named, '$OPT_PROJECT'."
+    (( exists )) && db_sql "DELETE from $DB_TABLE_NAME WHERE project='$OPT_PROJECT';"
+}
+
+list() {
+    local note project punch begin t q="
+        SELECT punch, status, project, note
+        FROM $DB_TABLE_NAME
+        WHERE project='$OPT_PROJECT'
+        ORDER BY punch ASC
+    ;"
+    while read punch stat project note;do
+        sum=0
+        if (( stat ));then
+            begin=$punch
+        else
+            t=0
+            sum=$(( punch - begin ))
+            (( OPT_QUIET )) && note='' || note="${PUNCH_DELIM}${note}"
+            (( OPT_CLEAN )) && t=$sum || t=$(date_fmt_colon $sum)
+            printf "%s%s%s%s\n" \
+                "$project" "$PUNCH_DELIM" \
+                "$t" "$note"
+        fi
+    done < <(db_sql "$q")
+}
+
+punch() {
+    local insert_project insert_status
+    local q i=0 proj_punched=0
+    declare -a in_projects
+
+    local stat_return
+    if [[ -n $OPT_PROJECT ]];then
+        insert_project=$OPT_PROJECT
+        #determine if we need to punch in or out for this project.
+        stat_return=$(project_status "$OPT_PROJECT")
+        if [[ $stat_return =~ $NUMERIC_EXPR ]];then
+            insert_status=$(( 10#$stat_return ))
+            insert_status=$(( ! $insert_status ))
+        else
+            #we are punching in, there is no previous record of this project
+            insert_status=1
+        fi
+    else
+        #project not specified, implied punching out, figure out which project.
+        insert_status=0
+        local list="
+            SELECT DISTINCT project
+            FROM $DB_TABLE_NAME
+            ORDER BY punch
+        ;"
+
+        #check each project to find out what's punched into
+        local first
+        while read project; do
+            proj_punched=0
+            proj_punched=$(( 10#$(project_status "$project") ))
+            if (( proj_punched ));then
+                if [[ -n $insert_project ]];then
+                    # another project is also punched into. which are we
+                    # punching out of?
+                    (( OPT_QUIET )) && die $E_USAGE
+                    if [[ -n $first ]];then
+                        in_projects+=($first)
+                        unset first
+                    fi
+                    in_projects+=($project)
+                else
+                    # this is the only known punched-into project, so far.
+                    (( n )) || first=$project #incase needed
+                    insert_project=$project
+                fi
+                ((++n))
+            fi
+        done < <(db_sql "$list")
+
+        if [[ -n $in_projects ]];then
+            #loop through each project that was found, and allow user to choose:
+            echo 'You are currently punched-in for multiple projects.'
+            while true;do
+                echo 'Which project would you like to punch out of?'
+                i=0
+                for proj in "${in_projects[@]}";do
+                    #show a listing of possible projects
+                    echo -e "[$(( $i+1 ))]:\t$proj"
+                    ((++i))
+                done
+                #prompt user
+                local prompt='[#|q]? '
+                read -p $prompt ans
+
+                #process and verify user-input
+                [[ -z $ans || $ans = q ]] && die $E_ERROR
+                if [[ ! "$ans" =~ $NUMERIC_EXPR ]];then
+                    #user input was not numeric
+                    error "'$ans' is not a number in the list."
+                    continue
+                fi
+                ans=$(( 10#$ans ))
+                if (( ans > 0 && ans <= "${#in_projects[@]}" ));then
+                    #user chose a project
+                    insert_project="${in_projects[$(( --ans ))]}"
+                    echo "punching out of $insert_project"
+                    break;
+                else
+                    #user input was out of range
+                    error "Please choose an item number in the list."
+                    continue
+                fi
+            done
+        elif [[ -z $insert_project ]];then
+            error "You are not punched into any projects, cannot assume what
+            you would like to punch out of. Please see -c to specify a project
+            to punch into."
+            die $E_ERROR
+        fi
+    fi
+
+
+    # run query ###############################################
+    local q="
+        INSERT INTO $DB_TABLE_NAME
+        VALUES (
+            strftime('%s', 'now'),
+            $insert_status,
+            '$insert_project',
+            '$OPT_NOTE'
+        );
+    "
+    db_sql "$q"
+}
+
+data_dump() {
+    db_sql "SELECT * FROM $DB_TABLE_NAME ORDER BY punch ASC;"
+}
+
+project_status() {
+    [[ -z $OPT_PROJECT && -z $1 ]] && return 1
+    local project="${1:-$OPT_PROJECT}"
+    local q="
+        SELECT status
+        FROM $DB_TABLE_NAME
+        WHERE PROJECT='$project'
+        ORDER BY PUNCH DESC
+        LIMIT 0,1
+    ;"
+    local stat=$(db_sql "$q")
+    [[ -z $stat ]] && echo 'none' || echo $stat
+}
+
+projects() {
+    local t q r
+    q="SELECT DISTINCT project FROM $DB_TABLE_NAME ORDER BY project ASC;"
+
+    while read result ;do
+        echo -n "$result"
+        if (( ! OPT_QUIET ));then
+            t=$(project_total "$result")
+            (( OPT_CLEAN )) || t=$(date_fmt_colon "$t")
+            echo "${PUNCH_DELIM}$t"
+        else
+            echo
+        fi
+    done < <(db_sql "$q")
+}
+
+date_fmt_colon() {
+    # @NOTE: before assuming this function is broken!
+    # Take a look at the function tha tpasses numbers in here.. is that
+    # funciton passing raw epoch times? if so, you need to _instead_ be passing
+    # in the result of this arithmetic: `$(date +%s) - raw_epoch_output` --
+    # otherwise, you'll get back results like "41 years, etc. etc".
+
+    [[ "$1" =~ $NUMERIC_EXPR ]] || return 1
+    declare -r stamp=$(( 10#$1 ))
+    declare -A digital=(
+        [y]=0
+        [w]=0
+        [d]=0
+        [h]=0
+        [m]=0
+        [s]=0
+    )
+    declare -rA seconds=(
+        [y]=$(( 60 * 60 * 24 * 365 ))
+        [w]=$(( 60 * 60 * 24 * 7 ))
+        [d]=$(( 60 * 60 * 24 ))
+        [h]=$(( 60 * 60 ))
+        [m]=60
+    )
+
+    digital[y]=$(( stamp / seconds[y] ))
+    digital[w]=$(( $(( stamp - $(( digital[y] * seconds[y] )) )) / seconds[w] ))
+    digital[d]=$(( $(( stamp - $(( digital[w] * seconds[w] )) )) / seconds[d] ))
+    digital[h]=$(( $(( stamp - $(( digital[d] * seconds[d] )) )) / seconds[h] ))
+    digital[m]=$(( $(( stamp - $(( digital[h] * seconds[h] )) )) / seconds[m] ))
+    digital[s]=$(( stamp % seconds[m] ))
+
+    local plural
+    local time=''
+    (( digital[y] > 1 )) && plural='s' || plural=''
+    (( digital[y] )) && time="${digital[y]} year${plural}, "
+
+    (( digital[w] > 1 )) && plural='s' || plural=''
+    (( digital[w] )) && time="${time}${digital[w]} week${plural}, "
+
+    (( digital[d] > 1 )) && plural='s' || plural=''
+    (( digital[d] )) && time="${time}${digital[d]} day${plural}, "
+    echo "${time}${digital[h]}:${digital[m]}:${digital[s]}"
+}
+
+project_total() {
+    local p=$1 i=1 s total=0
+    [[ -z $p ]] && return 1
+    local q="SELECT punch FROM $DB_TABLE_NAME WHERE project='$p' ORDER BY punch"
+
+    #loop through each punch
+    while read stamp;do
+        if (( i % 2 ));then
+            #on "start" stamp
+            s="$stamp"
+        else
+            #on "end" stamp
+            total=$(( total + $(( stamp - s )) ))
+        fi
+        (( ++i ))
+    done < <(db_sql "$q")
+
+    echo $total
+}
+
+remove() {
+    if [[ "$OPT_DELETE" =~ $NUMERIC_EXPR ]];then
+        db_sql "DELETE FROM $DB_TABLE_NAME WHERE punch='$OPT_DELETE';"
+    else
+        error "'$OPT_DELETE' is not a valid timestamp. Numeric characters only."
+        die $E_USAGE
+    fi
+}
+
+spent() {
+    local t=$(project_total "$OPT_PROJECT")
+    (( OPT_CLEAN )) && echo "$t" || date_fmt_colon "$t"
+}
+
+trap die $E_DIRTY SIGINT
+# parse args: #################################################################
+if (( $# ));then
+
+    #build an array of possible options, all set to false
+    declare -A OPT_RUN
+    for option in "${!OPTS[@]}"; do
+        OPT_RUN["${option/:/}"]=0
+    done
+
+    #parse arguments
+    while getopts ":$(printf "%s" "${!OPTS[@]}")" option; do
+        case $option in
+            c)
+                declare -r OPT_PROJECT=$OPTARG 2>/dev/null
+                ;;
+            C)
+                #projects()
+                OPT_RUN[$option]=1
+                ;;
+            D)
+                declare -r OPT_DELETE=$OPTARG 2>/dev/null
+                #remove()
+                OPT_RUN[$option]=1
+                ;;
+            h)
+                help
+                ;;
+            l)
+                #list()
+                OPT_RUN[$option]=1
+                ;;
+            L)
+                #list()
+                OPT_RUN[$option]=1
+                ;;
+            p)
+                #punch()
+                OPT_RUN[$option]=1
+                ;;
+            q)
+                declare -r OPT_QUIET=1 2>/dev/null
+                ;;
+            d)
+                #delete()
+                OPT_RUN[$option]=1
+                ;;
+            s)
+                declare -r OPT_CLEAN=1 2>/dev/null
+                ;;
+            t)
+                #spent()
+                OPT_RUN[$option]=1
+                ;;
+            u)
+                usage 0
+                ;;
+            \?)
+                error "-$OPTARG is not a valid option. See -h for help."
+                die $E_USAGE
+                ;;
+            :)
+                error "-$OPTARG requires an argument. See -h for help."
+                die $E_USAGE
+                ;;
+        esac
+    done
+    #get all paremeters getopts didn't use.
+    shift $((OPTIND-1))
+    declare -r OPT_NOTE=${*}
+else
+    #no arguments were passed
+    init_storage
+    current
+    die $?
+fi
+
+# main: #######################################################################
+# - Try to run functions in a sensible sequence. ##############################
+
+#if nothing functional was run, do the default `current`
+(( $(IFS='+'; printf '%s' "${OPT_RUN[*]}") )) || { current ; die $?; }
+
+#
+# Some sanity checking.
+#
+
+#functions that need a client to be specified:
+if (( OPT_RUN[t] ||
+    OPT_RUN[d] ||
+    OPT_RUN[l] ));then
+    need_client
+fi
+
+init_storage
+check_schema
+
+#
+# Run one-off functions and die.
+#
+# for cleanliness of output
+# that that covers all the db content should not be run with other functions.
+#
+
+if (( OPT_RUN[C] ));then
+    projects
+    die $?
+fi
+
+if (( OPT_RUN[L] ));then
+    data_dump
+    die $?
+fi
+
+#
+# Make all changes before running any queries.
+#
+
+if (( OPT_RUN[p] ));then
+    punch
+fi
+
+if (( OPT_RUN[d] ));then
+    delete
+fi
+
+if (( OPT_RUN[D] ));then
+    remove
+fi
+
+#
+# Calculate and output all reporting.
+#
+
+if (( OPT_RUN[l] ));then
+    list
+fi
+
+if (( OPT_RUN[t] ));then
+    spent
+fi
+
