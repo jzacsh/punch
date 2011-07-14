@@ -104,7 +104,7 @@ usage() {
             [[ ${opt:1:1} = : ]] || echo -n $opt
         done
     )
-    local i=0 n x=0
+    local i=0 n x=0 OR
     local argflags=$(
         for opt in ${!OPTS[@]}; do
             if [[ ${opt:1:1} = : ]];then
