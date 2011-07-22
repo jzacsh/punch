@@ -18,10 +18,10 @@ OPT_PROJECT=${PUNCH_CLIENT}
 
 #see /usr/include/sysexits.h
 E_ERROR=1   #general error
-E_DIRTY=3   #general error
+E_DIRTY=3   #caught sigint
 E_USAGE=64  #command line usage error
 E_DATAF=65  #data format error
-E_NPERM=77  #configuration error
+E_NPERM=77  #permission denied
 E_CONFG=78  #configuration error
 
 # early fails: ################################################################
