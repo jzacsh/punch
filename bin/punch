@@ -50,7 +50,8 @@ declare -rA OPTS=(
     [q]='Quiet mode, print minimal output and even fail quietly.'
     [d]='Delete all punch-card entries made under a project. See -c.'
     [s]='Output timestamps as epoch, intended as shell input. See eval(1p).'
-    [t]='Sum of total punch-card entries under project. See -c.'
+    [t]='Sum of total punch-card entries completed under a project. See -c.'
+    [T]='Running, live-sum of total punch-card entries under project. See -c, -t.'
     [u]='Usage statement.'
 )
 
@@ -515,9 +516,37 @@ remove() {
     fi
 }
 
+#get the current completed total
 spent() {
     local t=$(project_total "$OPT_PROJECT")
     (( OPT_CLEAN )) && echo "$t" || date_fmt_colon "$t"
+}
+
+#get the current running total
+running() {
+    local total q r stat started running sofar
+    _orig_opt="$OPT_CLEAN"
+    OPT_CLEAN=1; total=$(spent)
+    OPT_CLEAN="$_orig_opt"
+
+    q="
+        SELECT status, punch
+        FROM $DB_TABLE_NAME
+        WHERE project='$OPT_PROJECT'
+        ORDER BY punch DESC
+        LIMIT 0,1
+    ;"
+    sofar=$(
+        db_sql "$q" | {
+            read $PUNCH_DELIM stat started
+            if (( stat ));then
+                echo $(( 10#$(date +%s) - started ))
+            fi
+        }
+    )
+    running=$(( sofar + total ))
+
+    (( OPT_CLEAN )) && echo "$running" || date_fmt_colon "$running"
 }
 
 trap die $E_DIRTY SIGINT
@@ -572,6 +601,10 @@ if (( $# ));then
                 ;;
             t)
                 #spent()
+                OPT_RUN[$option]=1
+                ;;
+            T)
+                #running()
                 OPT_RUN[$option]=1
                 ;;
             u)
@@ -660,6 +693,10 @@ fi
 
 if (( OPT_RUN[t] ));then
     spent
+fi
+
+if (( OPT_RUN[T] ));then
+    running
 fi
 
 # vim: et:sw=4:ts=4
