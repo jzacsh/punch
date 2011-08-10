@@ -18,10 +18,10 @@ OPT_PROJECT=${PUNCH_CLIENT}
 
 #see /usr/include/sysexits.h
 E_ERROR=1   #general error
-E_DIRTY=3   #general error
+E_DIRTY=3   #caught sigint
 E_USAGE=64  #command line usage error
 E_DATAF=65  #data format error
-E_NPERM=77  #configuration error
+E_NPERM=77  #permission denied
 E_CONFG=78  #configuration error
 
 # early fails: ################################################################
@@ -105,7 +105,7 @@ usage() {
             [[ ${opt:1:1} = : ]] || echo -n $opt
         done
     )
-    local i=0 n x=0
+    local i=0 n x=0 OR
     local argflags=$(
         for opt in ${!OPTS[@]}; do
             if [[ ${opt:1:1} = : ]];then
