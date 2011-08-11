@@ -43,15 +43,15 @@ declare -rA OPTS=(
     [c:]='client  Specify the client/project being referenced, "__".'
     [C]='List all clients/projects on punch-card. Exits immediately.'
     [D:]='timestamp  Delete all in/out punch-card entries at epoch, "__".'
+    [d]='Delete all punch-card entries made under a project. See -c.'
     [h]='Help message.'
     [L]='List all entries, for every project, on punch-card. Exits immediately.'
     [l]='List all punch-card entries made under a project. See -c.'
     [p]='Punch in/out for a "client"/"project" being referenced. See -c.'
     [q]='Quiet mode, print minimal output and even fail quietly.'
-    [d]='Delete all punch-card entries made under a project. See -c.'
+    [r]='Running, live-sum of total punch-card entries under project. See -c, -t.'
     [s]='Output timestamps as epoch, intended as shell input. See eval(1p).'
     [t]='Sum of total punch-card entries completed under a project. See -c.'
-    [r]='Running, live-sum of total punch-card entries under project. See -c, -t.'
     [u]='Usage statement.'
 )
 
