@@ -51,7 +51,7 @@ declare -rA OPTS=(
     [d]='Delete all punch-card entries made under a project. See -c.'
     [s]='Output timestamps as epoch, intended as shell input. See eval(1p).'
     [t]='Sum of total punch-card entries completed under a project. See -c.'
-    [T]='Running, live-sum of total punch-card entries under project. See -c, -t.'
+    [r]='Running, live-sum of total punch-card entries under project. See -c, -t.'
     [u]='Usage statement.'
 )
 
@@ -643,7 +643,7 @@ if (( $# ));then
                 #spent()
                 OPT_RUN[$option]=1
                 ;;
-            T)
+            r)
                 #running()
                 OPT_RUN[$option]=1
                 ;;
@@ -685,7 +685,7 @@ fi
 
 #functions that need a client to be specified, but can use current running
 #client
-if (( OPT_RUN[t] || OPT_RUN[T] ));then
+if (( OPT_RUN[t] || OPT_RUN[r] ));then
     OPT_PROJECT=${OPT_PROJECT:-$(running_project)}
     [[ -z ${OPT_PROJECT} ]] && need_client
 fi
@@ -738,7 +738,7 @@ if (( OPT_RUN[t] ));then
     spent
 fi
 
-if (( OPT_RUN[T] ));then
+if (( OPT_RUN[r] ));then
     running
 fi
 
