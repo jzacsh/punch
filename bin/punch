@@ -549,6 +549,46 @@ running() {
     (( OPT_CLEAN )) && echo "$running" || date_fmt_colon "$running"
 }
 
+#get a listing of the current open project click-ins
+running_projects() {
+    local q p project_query stat
+
+    project_query="
+        SELECT DISTINCT project
+        FROM $DB_TABLE_NAME
+        ORDER BY punch DESC
+    ;"
+
+    while read p; do
+        q="
+            SELECT status
+            FROM $DB_TABLE_NAME
+            WHERE project='$p'
+            ORDER BY punch DESC
+            LIMIT 0,1
+        ;"
+        stat=$(db_sql "$q")
+        (( stat )) && echo "$p"
+    done < <(db_sql "$project_query")
+}
+
+#get a listing of the single/only open project
+running_project() {
+    local i=0
+    echo $(running_projects | {
+        local p
+        while read project;do
+            if (( i ));then
+                project=''
+            else
+                p="$project"
+            fi
+            (( ++i ))
+        done
+        printf "%s" "$p"
+    })
+}
+
 trap die $E_DIRTY SIGINT
 # parse args: #################################################################
 if (( $# ));then
@@ -563,7 +603,7 @@ if (( $# ));then
     while getopts ":$(printf "%s" "${!OPTS[@]}")" option; do
         case $option in
             c)
-                declare -r OPT_PROJECT=$OPTARG 2>/dev/null
+                declare OPT_PROJECT=$OPTARG 2>/dev/null
                 ;;
             C)
                 #projects()
@@ -641,10 +681,13 @@ fi
 #
 
 #functions that need a client to be specified:
-if (( OPT_RUN[t] ||
-    OPT_RUN[d] ||
-    OPT_RUN[l] ));then
-    need_client
+((OPT_RUN[d] || OPT_RUN[l] )) && need_client
+
+#functions that need a client to be specified, but can use current running
+#client
+if (( OPT_RUN[t] || OPT_RUN[T] ));then
+    OPT_PROJECT=${OPT_PROJECT:-$(running_project)}
+    [[ -z ${OPT_PROJECT} ]] && need_client
 fi
 
 init_storage
