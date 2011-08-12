@@ -5,6 +5,10 @@
  # this should take into consideration multiple current punch-in's and prompt
  # if necessary.
 
+ #@TODO: create a PUNCH_BUS to represent "business speak". this would cause
+ # date_fmt_colon() to return "day" as 8-hour work-periods, as opposed to real 24-hour
+ # periods of time.
+
 # early conf ##################################################################
 
 #feel free to change this _default values:
