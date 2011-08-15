@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
  #@TODO:
+ # create cli interface to edit punches. eg.: be able push the "punch-in" for a
+ # specific stamp, two hours back or 90 seconds forward.
+
+ #@TODO:
  # add a "update"/"note" function the update the note for a current punch-in.
  # this should take into consideration multiple current punch-in's and prompt
  # if necessary.
