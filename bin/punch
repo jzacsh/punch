@@ -151,6 +151,7 @@ usage() {
         PUNCH_CLIENT - Client/Project name to use. See -c." >&2
 
     (( $# )) && die ${@}
+    return 0
 }
 
 # helpers: ####################################################################
