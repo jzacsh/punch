@@ -16,7 +16,7 @@
 # early conf ##################################################################
 
 #feel free to change this _default values:
-_CARD=~/.config/punchcard
+_CARD="$(readlink -f "${XDG_DATA_HOME:-$HOME/.local/share/}")/"punchcard
 _DELIM=' '
 
 PUNCH_CARD=${PUNCH_CARD:-$_CARD}
