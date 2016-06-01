@@ -626,6 +626,9 @@ running_project() {
     })
 }
 
+# Indication user probably thinks they're modifying runtime behavior
+purelySideEffect=0 # should only be set for side-effect flags
+
 trap die $E_DIRTY SIGINT
 # parse args: #################################################################
 if (( $# ));then
@@ -641,6 +644,7 @@ if (( $# ));then
         case $option in
             c)
                 declare OPT_PROJECT=$OPTARG 2>/dev/null
+                purelySideEffect=1
                 ;;
             C)
                 #projects()
@@ -668,6 +672,7 @@ if (( $# ));then
                 ;;
             q)
                 declare -r OPT_QUIET=1 2>/dev/null
+                purelySideEffect=1
                 ;;
             d)
                 #delete()
@@ -675,6 +680,7 @@ if (( $# ));then
                 ;;
             s)
                 declare -r OPT_CLEAN=1 2>/dev/null
+                # Not `purelySideEffect`! modifies `current` runtime behavior
                 ;;
             t)
                 #spent()
@@ -711,7 +717,15 @@ fi
 # - Try to run functions in a sensible sequence. ##############################
 
 #if nothing functional was run, do the default `current`
-(( $(IFS='+'; printf '%s' "${OPT_RUN[*]}") )) || { current ; die $?; }
+(( $(IFS='+'; printf '%s' "${OPT_RUN[*]}") )) || {
+    if (( purelySideEffect ));then
+      error 'Flags provided, but no action indicated. See -h for more.'
+      die $E_USAGE
+    fi
+
+    current
+    die $?
+}
 
 #
 # Some sanity checking.
