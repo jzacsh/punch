@@ -153,16 +153,25 @@ usage() {
 
   EXAMPLE USAGE
 
-    Called with no arguments ${_n^} prints your current time on the clock.
-
     To start working on your presidential campaign:
 
         \$ ${_n} -c potus -p  planning my compaign trail
 
                            # ^ optional note
 
-        \$ ${_n}  # no args: outputs status (5+ minutes on the job!)
+    Called without arguments, prints current the current session's time:
+        \$ ${_n}
         potus 0:5:34 note: 'planning my compaign trail'
+
+        # That's 5+ minutes! on the job, woot!
+
+    More broadly, to print accumulated time on becoming president, -r flag:
+        \$ ${_n} -c potus -r
+        24:5:36
+
+    Similar to -r, but showing *completed* time (excluding this session):
+        \$ ${_n} -c potus -t
+        24:0:00
     \r" >&2
 
     (( $# )) && die ${@}
