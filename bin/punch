@@ -98,10 +98,9 @@ help() {
     done
 
     #print help section
-    echo "\
-    OPTIONS:" >&2
+    printf '  OPTIONS\n' >&2
     for help in "${HELP[@]}"; do
-        echo -e "\t$help" >&2
+        echo -e "    $help" >&2
     done
 
     die $1
@@ -135,20 +134,36 @@ usage() {
         done
     )
 
-    echo "$_n [$flags] [ $argflags ] [ note... ]
+    echo -e "$_n [$flags] [ $argflags ] [ note... ]
+  SUMMARY
+
     Simple punch card utility, lets you punch in, out and get paid.
+
+  DESCRIPTION
 
     ${_n^} generally takes a client/subject of what you're working *for* and
     optionaly a quick note of what you're working *on*, then stores a timestamp
     in your local punch-card database.
 
+  ENVIRONMENT VARIABLES
+    \$PUNCH_CARD   - Location of your punch-card database. Defaults to $_CARD.
+    \$PUNCH_DELIM  - Field delimeter for data output. Defaults to '$_DELIM'.
+    \$PUNCH_CLEAN  - Set to '1' enables stamp output for times. See -s.
+    \$PUNCH_CLIENT - Client/Project name to use. See -c.
+
+  EXAMPLE USAGE
+
     Called with no arguments ${_n^} prints your current time on the clock.
 
-    ENVIRONMENT VARIABLES
-        PUNCH_CARD   - Location of your punch-card database. Defaults to $_CARD.
-        PUNCH_DELIM  - Field delimeter for data output. Defaults to '$_DELIM'.
-        PUNCH_CLEAN  - Set to '1' enables stamp output for times. See -s.
-        PUNCH_CLIENT - Client/Project name to use. See -c." >&2
+    To start working on your presidential campaign:
+
+        \$ ${_n} -c potus -p  planning my compaign trail
+
+                           # ^ optional note
+
+        \$ ${_n}  # no args: outputs status (5+ minutes on the job!)
+        potus 0:5:34 note: 'planning my compaign trail'
+    \r" >&2
 
     (( $# )) && die ${@}
     return 0
