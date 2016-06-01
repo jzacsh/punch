@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
  #@TODO:
  # create cli interface to edit punches. eg.: be able push the "punch-in" for a
