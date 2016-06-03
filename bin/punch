@@ -316,7 +316,7 @@ delete() {
 aElseB() { [ -n "${1/ */}" ] && echo "$1" || echo "$2"; }
 
 list() {
-    local startNote note project punch begin t q="
+    local startNote note project punch begin t from to span q="
         SELECT punch, status, project, note
         FROM $DB_TABLE_NAME
         WHERE project='$OPT_PROJECT'
@@ -330,11 +330,24 @@ list() {
         else
             t=0
             sum=$(( punch - begin ))
-            (( OPT_QUIET )) && note='' || note="${PUNCH_DELIM}${note}"
-            (( OPT_CLEAN )) && t=$sum || t=$(date_fmt_colon $sum)
-            printf "%s%s%s%s%s\n" \
+            if (( OPT_QUIET ));then note=''; else note="${PUNCH_DELIM}${note}";fi
+            if (( OPT_CLEAN ));then t=$sum; else t=$(date_fmt_colon $sum);fi
+
+            span=''
+            if ! (( OPT_CLEAN ));then
+                from="$(
+                    printf '%s %s' \
+                        "$(date --iso-8601=d --date="@$begin")" \
+                        "$(date '+%H:%M' --date="@$begin")"
+                )"
+                to="$(date '+%H:%M' --date="@$punch")"
+                span="$(printf '\t(%s to %s)' "$from" "$to")"
+            fi
+            printf "%s%s%s%s%s%s\n" \
                 "$project" "$PUNCH_DELIM" \
-                "$t" "$PUNCH_DELIM" "$(aElseB "$startNote" "$note")"
+                "$t" "$PUNCH_DELIM" \
+                "$(aElseB "$startNote" "$note")" \
+                "$span"
         fi
     done < <(db_sql "$q")
 }
