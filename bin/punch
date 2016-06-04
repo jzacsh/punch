@@ -59,7 +59,7 @@ declare -rA OPTS=(
     [p]='Punch in/out for a "client"/"project" being referenced. See -c.'
     [q]='Quiet mode, print minimal output and even fail quietly.'
     [R]='Running, live-sum of total punch-card entries under project. See -c, -t.'
-    [s]='Output timestamps as epoch, intended as shell input. See eval(1p).'
+    [e]='Output timestamps as seconds since epoch, intended as shell input.'
     [t]='Sum of total punch-card entries completed under a project. See -c.'
     [u]='Usage statement.'
 )
@@ -148,7 +148,7 @@ usage() {
   ENVIRONMENT VARIABLES
     \$PUNCH_CARD   - Location of your punch-card database. Defaults to $_CARD.
     \$PUNCH_DELIM  - Field delimeter for data output. Defaults to '$_DELIM'.
-    \$PUNCH_CLEAN  - Set to '1' enables stamp output for times. See -s.
+    \$PUNCH_CLEAN  - Set to '1' enables stamp output for times. See -e.
     \$PUNCH_CLIENT - Client/Project name to use. See -c.
 
   EXAMPLE USAGE
@@ -691,7 +691,7 @@ if (( $# ));then
                 #delete()
                 OPT_RUN[$option]=1
                 ;;
-            s)
+            e)
                 declare -r OPT_CLEAN=1 2>/dev/null
                 # Not `purelySideEffect`! modifies `current` runtime behavior
                 ;;
