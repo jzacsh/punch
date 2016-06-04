@@ -34,13 +34,11 @@ E_NPERM=77  #permission denied
 E_CONFG=78  #configuration error
 
 # early fails: ################################################################
-#make sure sqlite3 is available.
 if ! type sqlite3 &>/dev/null;then
     echo "$(basename $0) relies on sqlite3, which was not found on this system." >&2
     exit "$E_ERROR"
 fi
 
-#make sure bash version 4 is being used.
 if (( BASH_VERSINFO[0] < 4 ));then
     printf '%s relies heavily on bash version 4 features.
     Your bash version looks to be %s.' $(basename $0) "${BASH_VERSINFO[0]}" >&2
@@ -69,17 +67,12 @@ declare -rA OPTS=(
 
 NUMERIC_EXPR='^[0-9]+([.][0-9]+)?$'
 
-error() {
-    (( OPT_QUIET )) || echo -e "Error: ${@}" >&2
-}
+error() { (( OPT_QUIET )) || echo -e "Error: ${@}" >&2; }
 
-die() {
-    exit ${1:-'0'}
-}
+die() { exit ${1:-'0'}; }
 
 help() {
-    #print the regular usage
-    usage
+    usage #print the regular usage
     echo
 
     #build the help section
@@ -209,8 +202,8 @@ usage() {
 #   optional text note describing this work.
 # - note        TEXT
 ##############################################
-DB_TABLE_NAME='punchcard'
-DB_CREATE_TABLE="
+declare -r DB_TABLE_NAME='punchcard'
+declare -r DB_CREATE_TABLE="
 CREATE TABLE $DB_TABLE_NAME (
     punch       INTEGER NOT NULL PRIMARY KEY,
     status      INTEGER NOT NULL,
@@ -223,7 +216,6 @@ db_sql() {
     local opts=' '
 #   (( OPT_QUIET )) && opts='-noheader' || opts="-header"
 
-    #run query
     sqlite3 $opts \
         -separator "$PUNCH_DELIM" \
         $PUNCH_CARD "${@}"
@@ -231,7 +223,7 @@ db_sql() {
 
 db_out_sanitize() {
     while read line;do
-        [[ -n $line ]] && echo "$line"
+        [[ -n "${line/ */}" ]] && echo "$line"
     done
 }
 
@@ -249,7 +241,7 @@ create_db() {
 # punchcard tools: ############################################################
 
 init_storage() {
-    if [[ $(file -bL $PUNCH_CARD 2>/dev/null | grep -i 'sqlite') ]];then
+    if file -bL $PUNCH_CARD 2>/dev/null | grep -i sqlite >/dev/null 2>&1;then
         #punch card looks like an sqlite file.
         if [[ ! -w $PUNCH_CARD ]];then
             error "No write-access to punch-card."
@@ -279,15 +271,18 @@ init_storage() {
 check_schema() {
     #@TODO: this if fragile. there must be a _proper_, standard way to do this.
     # this will fail if even the columns are created in a different order.
-    if [[ $(diff -u <(echo "$DB_CREATE_TABLE" | db_out_sanitize) <(db_sql ".schema $DB_TABLE_NAME" | db_out_sanitize)) ]];then
+    diff -u \
+        <(echo "$DB_CREATE_TABLE" | db_out_sanitize) \
+        <(db_sql ".schema $DB_TABLE_NAME" | db_out_sanitize) || {
+
         error "Punch-card does not seem to be in proper format:\n\t$PUNCH_CARD"
         die $E_DATAF
-    fi
+    }
 }
 
-need_client() {
-    if [[ -z $OPT_PROJECT ]];then
-        error "Client not specified, expected -c. See -h for more."
+_assertClientSet() {
+    if [[ -z "${OPT_PROJECT/ */}" ]];then
+        error 'Client not specified, expected -c. See -h for more.'
         die $E_USAGE
     fi
 }
@@ -329,7 +324,7 @@ delete() {
     (( exists )) && db_sql "DELETE from $DB_TABLE_NAME WHERE project='$OPT_PROJECT';"
 }
 
-aElseB() { [ -n "${1/ */}" ] && echo "$1" || echo "$2"; }
+_aElseB() { [ -n "${1/ */}" ] && echo "$1" || echo "$2"; }
 
 list() {
     local startNote note project punch begin t from to span q="
@@ -362,7 +357,7 @@ list() {
             printf "%s%s%s%s%s%s\n" \
                 "$project" "$PUNCH_DELIM" \
                 "$t" "$PUNCH_DELIM" \
-                "$(aElseB "$startNote" "$note")" \
+                "$(_aElseB "$startNote" "$note")" \
                 "$span"
         fi
     done < <(db_sql "$q")
@@ -460,8 +455,6 @@ punch() {
         fi
     fi
 
-
-    # run query ###############################################
     local q="
         INSERT INTO $DB_TABLE_NAME
         VALUES (
@@ -474,9 +467,7 @@ punch() {
     db_sql "$q"
 }
 
-data_dump() {
-    db_sql "SELECT * FROM $DB_TABLE_NAME ORDER BY punch ASC;"
-}
+data_dump() { db_sql "SELECT * FROM $DB_TABLE_NAME ORDER BY punch ASC;"; }
 
 project_status() {
     [[ -z $OPT_PROJECT && -z $1 ]] && return 1
@@ -616,7 +607,7 @@ running() {
 }
 
 # Is integer range [$1,$2] inclusive of $3
-isInclusiveOf() ( { (( $3 >= $1 )) && (( $3 <= $2 )); }; )
+_isInclusiveOf() ( { (( $3 >= $1 )) && (( $3 <= $2 )); }; )
 
 _assertValidDateFormat() (
   date --date="$1" > /dev/null || {
@@ -659,16 +650,16 @@ rangeReport() {
         if (( stat ));then
             begin=$punchAt
             startNote="$note"
-        elif isInclusiveOf $rStartStmp $rEndStmp $begin ||
-             isInclusiveOf $rStartStmp $rEndStmp $punchAt;then
+        elif _isInclusiveOf $rStartStmp $rEndStmp $begin ||
+             _isInclusiveOf $rStartStmp $rEndStmp $punchAt;then
 
             if (( OPT_CLEAN ));then
-                if ! isInclusiveOf $rStartStmp $rEndStmp $begin;then
+                if ! _isInclusiveOf $rStartStmp $rEndStmp $begin;then
                     boundaryMsg="$(printf \
                         '\twarning: started %s before' \
                         "$(date_fmt_colon $(( begin - rStartStmp )) )"
                     )"
-                elif ! isInclusiveOf $rStartStmp $rEndStmp $punchAt;then
+                elif ! _isInclusiveOf $rStartStmp $rEndStmp $punchAt;then
                     boundaryMsg="$(printf \
                         '\twarning: ended %s after' \
                         "$(date_fmt_colon $(( punchAt - rEndStmp )) )"
@@ -695,7 +686,7 @@ rangeReport() {
             printf "%s%s%s%s%s%s\n" \
                 "$project" "$PUNCH_DELIM" \
                 "$t" \
-                "$(aElseB "$startNote" "$note")" \
+                "$(_aElseB "$startNote" "$note")" \
                 "$span" \
                 "$boundaryMsg"
         fi
@@ -751,14 +742,12 @@ purelySideEffect=0 # should only be set for side-effect flags
 trap die $E_DIRTY SIGINT
 # parse args: #################################################################
 if (( $# ));then
-
     #build an array of possible options, all set to false
     declare -A OPT_RUN
     for option in "${!OPTS[@]}"; do
         OPT_RUN["${option/:/}"]=0
     done
 
-    #parse arguments
     while getopts ":$(printf "%s" "${!OPTS[@]}")" option; do
         case $option in
             c)
@@ -827,8 +816,8 @@ if (( $# ));then
                 ;;
         esac
     done
-    #get all paremeters getopts didn't use.
-    shift $((OPTIND-1))
+
+    shift $((OPTIND-1)) #get all paremeters getopts didn't use.
     declare -r OPT_NOTE=${*}
 else
     #no arguments were passed
@@ -838,7 +827,7 @@ else
 fi
 
 # main: #######################################################################
-# - Try to run functions in a sensible sequence. ##############################
+# Tries to run functions in a sensible sequence. ##############################
 
 #if nothing functional was run, do the default `current`
 (( $(IFS='+'; printf '%s' "${OPT_RUN[*]}") )) || {
@@ -856,13 +845,12 @@ fi
 #
 
 #functions that need a client to be specified:
-((OPT_RUN[d] || OPT_RUN[l] )) && need_client
+((OPT_RUN[d] || OPT_RUN[l] )) && _assertClientSet
 
-#functions that need a client to be specified, but can use current running
-#client
+#functions that need a client specified, but can use current running client
 if (( OPT_RUN[t] || OPT_RUN[R] || OPT_RUN[r] ));then
     OPT_PROJECT=${OPT_PROJECT:-$(running_project)}
-    [[ -z ${OPT_PROJECT} ]] && need_client
+    [[ -z ${OPT_PROJECT} ]] && _assertClientSet
 fi
 
 init_storage
@@ -872,7 +860,7 @@ check_schema
 # Run one-off functions and die.
 #
 # for cleanliness of output
-# that that covers all the db content should not be run with other functions.
+# that covers all the db content should not be run with other functions.
 #
 
 if (( OPT_RUN[C] ));then
