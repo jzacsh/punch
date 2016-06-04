@@ -173,6 +173,21 @@ usage() {
     Similar to -R, but showing *completed* time (excluding this session):
         \$ ${_n} -c potus -t
         24:0:00
+
+    To report on time spent within a given range, say on Halloween of 1999:
+        $ punch -r 1999-10-31 -c potus
+        WARNING: no range-end given; assuming *entire* day of 1999-10-31
+        potus 2:27:44     (1999-10-31 09:47 to 12:15)
+        potus 0:30:21     (1999-10-31 12:21 to 12:51)
+        potus 0:19:28     (1999-10-31 13:59 to 14:19)
+        potus 2:18:58     (1999-10-31 14:24 to 16:42)
+        potus 1:37:54     (1999-10-31 16:51 to 18:29)
+        potus 0:23:45     (1999-10-31 18:47 to 19:10)
+
+        TOTAL:  7:38:10 spent on "potus", between 1999-10-31 00:00 and
+        1999-10-31 23:59
+
+    Note: Arguments to -r flag are passed directly to date(1)'s --date option.
     \r" >&2
 
     (( $# )) && die ${@}
