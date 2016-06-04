@@ -60,6 +60,7 @@ declare -rA OPTS=(
     [r:]='FROM,TO  Running-sum of total entries beteen FROM & TO inclusive.'
     [e]='Output timestamps as seconds since epoch, intended as shell input.'
     [t]='Sum of total punch-card entries completed under a project. See -c.'
+    [s]='Current session running-time for each active project. See -c.'
     [u]='Usage statement.'
 )
 
@@ -153,7 +154,7 @@ usage() {
 
                            # ^ optional note
 
-    Called without arguments, prints current the current session's time:
+    Called without arguments (or -s), prints current the current session's time:
         \$ ${_n}
         potus 0:5:34 note: 'planning my compaign trail'
 
@@ -229,6 +230,11 @@ db_out_sanitize() {
 
 create_db() {
     (( OPT_QUIET )) && return $E_CONFG
+
+    if ! [[ -w "$(dirname "$PUNCH_CARD")" ]];then
+        error "Target card directory not writeable: '$(dirname "$PUNCH_CARD")'"
+    fi
+
     local initialize
     echo -en "Would you like to initialize a punch-card, here:
 \t$PUNCH_CARD ?"
@@ -241,31 +247,20 @@ create_db() {
 # punchcard tools: ############################################################
 
 init_storage() {
-    if file -bL $PUNCH_CARD 2>/dev/null | grep -i sqlite >/dev/null 2>&1;then
-        #punch card looks like an sqlite file.
-        if [[ ! -w $PUNCH_CARD ]];then
-            error "No write-access to punch-card."
-            die $E_NPERM
-        fi
-    else
-        #punch card does not look like an sqlite file.
-        if [[ -f $PUNCH_CARD ]];then
-            #punch card at least likes like _some_ kind of file.
-            if (( 10#$(stat -L --printf='%s' $PUNCH_CARD 2>/dev/null) ));then
-                #punch card has something else in it.
-                error "Punch-card does not seem to be an sqlite3 database:\n\t$(file -L $PUNCH_CARD)"
-                die $E_CONFG
-            else
-                #punch card is an empty file. create tables?
-                error "Punch-card is not yet formatted."
-                [[ -w $PUNCH_CARD && -r $PUNCH_CARD ]] && create_db || die $?
-            fi
-        else
-            #punch card does not exist. create it?
-            error "Could not find punch-card\n\twas expecting: '$PUNCH_CARD'."
-            [[ -w $(dirname $PUNCH_CARD) ]] && create_db || die $?
-        fi
-    fi
+    { [ -f "$PUNCH_CARD" ] && [ -w "$PUNCH_CARD" ]; } || {
+        #punch card does not exist. create it?
+        (( OPT_QUIET )) ||
+            error "Could not find writeable punch-card\n\texpecting: '$PUNCH_CARD'."
+        create_db || die $?
+    }
+
+    file --brief --dereference "$PUNCH_CARD" 2>&1 |
+        \grep -i sqlite >/dev/null 2>&1 || {
+        error "Punchcard doesn't seem to be sqlite3 database:
+        $(file --dereference  $PUNCH_CARD)
+        Move offending file out of the way, then re-run punch to start fresh"
+        die $E_CONFG
+    }
 }
 
 check_schema() {
@@ -746,6 +741,11 @@ running_project() {
     })
 }
 
+sanityChecks() {
+    _assertClientStrFormat
+    check_schema
+}
+
 # Indication user probably thinks they're modifying runtime behavior
 purelySideEffect=0 # should only be set for side-effect flags
 
@@ -804,6 +804,10 @@ if (( $# ));then
                 #spent()
                 OPT_RUN[$option]=1
                 ;;
+            s)
+                #current()
+                OPT_RUN[$option]=1
+                ;;
             R)
                 #running()
                 OPT_RUN[$option]=1
@@ -832,40 +836,44 @@ if (( $# ));then
 else
     #no arguments were passed
     init_storage
+    sanityChecks
     current
     die $?
 fi
 
+isNoArgCall() ( (( $(IFS='+'; printf '%s' "${OPT_RUN[*]}") )); )
+
 # main: #######################################################################
 # Tries to run functions in a sensible sequence. ##############################
-
-#if nothing functional was run, do the default `current`
-(( $(IFS='+'; printf '%s' "${OPT_RUN[*]}") )) || {
-    if (( purelySideEffect ));then
-      error 'Flags provided, but no action indicated. See -h for more.'
-      die $E_USAGE
-    fi
-
-    current
-    die $?
-}
 
 #
 # Some sanity checking.
 #
 
+init_storage
+
 #functions that need a client to be specified:
-((OPT_RUN[d] || OPT_RUN[l] )) && _assertClientSet
+(( OPT_RUN[d] || OPT_RUN[l] )) && _assertClientSet
 
 #functions that need a client specified, but can use current running client
-if (( OPT_RUN[t] || OPT_RUN[R] || OPT_RUN[r] ));then
+if (( OPT_RUN[s] || OPT_RUN[t] || OPT_RUN[R] || OPT_RUN[r] || isNoArgCall ));then
     OPT_PROJECT=${OPT_PROJECT:-$(running_project)}
-    [[ -z ${OPT_PROJECT} ]] && _assertClientSet
+    _assertClientSet
 fi
 
-_assertClientStrFormat
-init_storage
-check_schema
+#if nothing functional was run, do the default `current`
+isNoArgCall || {
+    if (( purelySideEffect ));then
+      error 'Flags provided, but no action indicated. See -h for more.'
+      die $E_USAGE
+    fi
+
+    sanityChecks
+    current
+    die $?
+}
+
+sanityChecks
 
 #
 # Run one-off functions and die.
@@ -873,6 +881,11 @@ check_schema
 # for cleanliness of output
 # that covers all the db content should not be run with other functions.
 #
+
+if (( OPT_RUN[s] ));then
+    current
+    die $?
+fi
 
 if (( OPT_RUN[C] ));then
     projects
