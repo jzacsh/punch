@@ -287,6 +287,16 @@ _assertClientSet() {
     fi
 }
 
+_assertClientStrFormat() (
+    [[ "${OPT_PROJECT/ /}" = "$OPT_PROJECT" ]] && return
+    local errorMsg='Project/client CANNOT contain strings.'
+    errorMsg+=' Should be a short identifier, not a sentence.'
+    errorMsg+=" Found project set to '$OPT_PROJECT'"
+
+    error "$errorMsg"
+    die $E_USAGE
+)
+
 current() {
     local q stat stamp note verbage=''
 
@@ -853,6 +863,7 @@ if (( OPT_RUN[t] || OPT_RUN[R] || OPT_RUN[r] ));then
     [[ -z ${OPT_PROJECT} ]] && _assertClientSet
 fi
 
+_assertClientStrFormat
 init_storage
 check_schema
 
