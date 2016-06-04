@@ -58,7 +58,7 @@ declare -rA OPTS=(
     [l]='List all punch-card entries made under a project. See -c.'
     [p]='Punch in/out for a "client"/"project" being referenced. See -c.'
     [q]='Quiet mode, print minimal output and even fail quietly.'
-    [r]='Running, live-sum of total punch-card entries under project. See -c, -t.'
+    [R]='Running, live-sum of total punch-card entries under project. See -c, -t.'
     [s]='Output timestamps as epoch, intended as shell input. See eval(1p).'
     [t]='Sum of total punch-card entries completed under a project. See -c.'
     [u]='Usage statement.'
@@ -165,11 +165,11 @@ usage() {
 
         # That's 5+ minutes! on the job, woot!
 
-    More broadly, to print accumulated time on becoming president, -r flag:
-        \$ ${_n} -c potus -r
+    More broadly, to print accumulated time on becoming president, -R flag:
+        \$ ${_n} -c potus -R
         24:5:36
 
-    Similar to -r, but showing *completed* time (excluding this session):
+    Similar to -R, but showing *completed* time (excluding this session):
         \$ ${_n} -c potus -t
         24:0:00
     \r" >&2
@@ -699,7 +699,7 @@ if (( $# ));then
                 #spent()
                 OPT_RUN[$option]=1
                 ;;
-            r)
+            R)
                 #running()
                 OPT_RUN[$option]=1
                 ;;
@@ -749,7 +749,7 @@ fi
 
 #functions that need a client to be specified, but can use current running
 #client
-if (( OPT_RUN[t] || OPT_RUN[r] ));then
+if (( OPT_RUN[t] || OPT_RUN[R] ));then
     OPT_PROJECT=${OPT_PROJECT:-$(running_project)}
     [[ -z ${OPT_PROJECT} ]] && need_client
 fi
@@ -802,7 +802,7 @@ if (( OPT_RUN[t] ));then
     spent
 fi
 
-if (( OPT_RUN[r] ));then
+if (( OPT_RUN[R] ));then
     running
 fi
 
