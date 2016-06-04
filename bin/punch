@@ -59,6 +59,7 @@ declare -rA OPTS=(
     [p]='Punch in/out for a "client"/"project" being referenced. See -c.'
     [q]='Quiet mode, print minimal output and even fail quietly.'
     [R]='Running, live-sum of total punch-card entries under project. See -c, -t.'
+    [r:]='FROM,TO  Running-sum of total entries beteen FROM & TO inclusive.'
     [e]='Output timestamps as seconds since epoch, intended as shell input.'
     [t]='Sum of total punch-card entries completed under a project. See -c.'
     [u]='Usage statement.'
@@ -599,6 +600,89 @@ running() {
     (( OPT_CLEAN )) && echo "$running" || date_fmt_colon "$running"
 }
 
+# Is integer range [$1,$2] inclusive of $3
+isInclusiveOf() ( { (( $3 >= $1 )) && (( $3 <= $2 )); }; )
+
+# gets current running total within a given range
+rangeReport() {
+    local rStart rEnd=-1
+    rStart="${OPT_RANGE/,*/}"
+    if [ "${OPT_RANGE/,/}" = "$OPT_RANGE" ];then
+        (( OPT_QUIET )) ||
+            printf \
+                'WARNING: no range-end given; assuming *entire* day of %s\n' \
+                "$(date --iso-8601 --date="$rStart")" >&2
+        rStart="$(printf '%s 00:00' "$(date --iso-8601 --date="$rStart")")"
+          rEnd="$(printf '%s 23:59' "$(date --iso-8601 --date="$rStart")")"
+    else
+        rEnd="${OPT_RANGE/*,/}"
+        error "end range (from $rStart to $rEnd) not yet implemented!"
+        die $E_ERROR
+    fi
+
+    local rStartStmp rEndStmp
+    rStartStmp="$(date +%s --date="$rStart")"
+    rEndStmp="$(date +%s --date="$rEnd")"
+
+    local boundaryMsg startNote note project punchAt begin t from to span q="
+        SELECT punch, status, project, note
+        FROM $DB_TABLE_NAME
+        WHERE project='$OPT_PROJECT'
+        ORDER BY punch ASC
+    ;"
+
+    local grandTotal=0
+    while read punchAt stat project note;do
+        sum=0
+        if (( stat ));then
+            begin=$punchAt
+            startNote="$note"
+        elif isInclusiveOf $rStartStmp $rEndStmp $begin ||
+             isInclusiveOf $rStartStmp $rEndStmp $punchAt;then
+
+            if (( OPT_CLEAN ));then
+                if ! isInclusiveOf $rStartStmp $rEndStmp $begin;then
+                    boundaryMsg="$(printf \
+                        '\twarning: started %s before' \
+                        "$(date_fmt_colon $(( begin - rStartStmp )) )"
+                    )"
+                elif ! isInclusiveOf $rStartStmp $rEndStmp $punchAt;then
+                    boundaryMsg="$(printf \
+                        '\twarning: ended %s after' \
+                        "$(date_fmt_colon $(( punchAt - rEndStmp )) )"
+                    )"
+                fi
+            fi
+
+            t=0
+            sum=$(( punchAt - begin ))
+            grandTotal=$(( grandTotal + sum ))
+            if (( OPT_QUIET ));then note=''; else note="${PUNCH_DELIM}${note}${PUNCH_DELIM}";fi
+            if (( OPT_CLEAN ));then t=$sum; else t=$(date_fmt_colon $sum);fi
+
+            span=''
+            if ! (( OPT_CLEAN ));then
+                from="$(
+                    printf '%s %s' \
+                        "$(date --iso-8601=d --date="@$begin")" \
+                        "$(date '+%H:%M' --date="@$begin")"
+                )"
+                to="$(date '+%H:%M' --date="@$punchAt")"
+                span="$(printf '\t(%s to %s)' "$from" "$to")"
+            fi
+            printf "%s%s%s%s%s%s\n" \
+                "$project" "$PUNCH_DELIM" \
+                "$t" \
+                "$(aElseB "$startNote" "$note")" \
+                "$span" \
+                "$boundaryMsg"
+        fi
+    done < <(db_sql "$q")
+
+    printf '\nTOTAL:\t%s spent on "%s", between %s and %s\n' \
+        "$(date_fmt_colon $grandTotal)" "$OPT_PROJECT" "$rStart" "$rEnd"
+}
+
 #get a listing of the current open project click-ins
 running_projects() {
     local q p project_query stat
@@ -703,6 +787,11 @@ if (( $# ));then
                 #running()
                 OPT_RUN[$option]=1
                 ;;
+            r)
+                declare -r OPT_RANGE=$OPTARG 2>/dev/null
+                #rangeReport()
+                OPT_RUN[$option]=1
+                ;;
             u)
                 usage 0
                 ;;
@@ -749,7 +838,7 @@ fi
 
 #functions that need a client to be specified, but can use current running
 #client
-if (( OPT_RUN[t] || OPT_RUN[R] ));then
+if (( OPT_RUN[t] || OPT_RUN[R] || OPT_RUN[r] ));then
     OPT_PROJECT=${OPT_PROJECT:-$(running_project)}
     [[ -z ${OPT_PROJECT} ]] && need_client
 fi
@@ -804,6 +893,10 @@ fi
 
 if (( OPT_RUN[R] ));then
     running
+fi
+
+if (( OPT_RUN[r] ));then
+    rangeReport
 fi
 
 # vim: et:sw=4:ts=4
