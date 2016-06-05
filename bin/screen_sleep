@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+#
+# Punch out of active sessions (or in if $1=in).
+set -e
+
+declare -r autoOutDataDir="${XDG_DATA_HOME:-$HOME/.local/share}"
+{ [ -d "$autoOutDataDir" ] && [ -w "$autoOutDataDir" ]; } || {
+  printf 'Error: nowhere to store data!
+  $XDG_DATA_HOME or default not writeable directories.\n' >&2
+  exit 1
+}
+declare -r autoOutData="$(readlink -f "$autoOutDataDir")"/autopunchout
+
+declare -r attachedSessions="$(tmux list-sessions -F '#{session_attached}')"
+[ "$attachedSessions" = 0 ] || {
+  printf \
+    'Potentially active work in `tmux` (%s sessions attached)\n' \
+    "$attachedSessions" >&2
+  exit 1
+}
+
+declare -r mode="$1";
+{ [ -n "${mode/ */}" ] && { [ "$mode" = 'in' ] || [ "$mode" = 'out' ]; }; } || {
+  printf 'Error: expected "in" or "out" command; got, "%s"\n' "$mode" >&2
+  exit 1
+}
+
+# $1='long note string'
+autoNote() (
+  local parts origNote=''
+  if [ -n "${1/ */}" ];then
+    parts="$(printf '%s\n' "$1")"
+    origNote="${parts[1]}"
+  fi
+
+  local note=''
+  case "$mode" in
+    'out')
+      if [ -n "$origNote" ];then
+        note="$(printf ' (punch-in note was: "%s")' "$origNote")"
+      fi
+      printf 'auto punching out%s' "$note"
+      ;;
+    'in')
+      if [ -n "$origNote" ];then
+        note="$(printf ' (original punch-in note was: "%s")' "$origNote")"
+      fi
+      printf 'auto punching back in%s' "$note"
+      ;;
+  esac
+)
+
+isPunchedInto() ( punch -seq 2>&1 | grep "$1" >/dev/null 2>&1; )
+
+humanPunch() (
+  local p="$1"; shift
+  punch -p -c "$p" "$@"
+
+  # punch's schema set's the punch stamps as unique; so we must behave a little
+  # more human in this script
+  sleep 1
+)
+
+if [ "$mode" = out ];then
+  punch -se | while read project stamp optNote;do
+    printf '%s\t%s\n' "$project" "$stamp" >> "$autoOutData"
+    humanPunch "$project" "$(autoNote "$optNote")"
+  done
+elif [ "$mode" = 'in' ];then
+  while read project stamp;do
+    if isPunchedInto "$project";then
+      printf \
+        'WARNING: already punched into "%s" (orginal punch-in at %s)\n' \
+        "$project" "$stamp" >&2
+      continue
+    fi
+    humanPunch "$project" "$(autoNote)"
+  done < "$autoOutData"
+  echo -n > "$autoOutData"
+fi
