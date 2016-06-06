@@ -19,7 +19,7 @@ declare -r attachedSessions="$(tmux list-sessions -F '#{session_attached}')"
   exit 1
 }
 
-declare -r mode="$1";
+declare -r mode="$1"
 { [ -n "${mode/ */}" ] && { [ "$mode" = 'in' ] || [ "$mode" = 'out' ]; }; } || {
   printf 'Error: expected "in" or "out" command; got, "%s"\n' "$mode" >&2
   exit 1
