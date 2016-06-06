@@ -62,6 +62,8 @@ humanPunch() (
 )
 
 if [ "$mode" = out ];then
+  punch -se >/dev/null 2>&1 || exit 0 # not punched into anything
+
   punch -se | while read project stamp optNote;do
     printf '%s\t%s\n' "$project" "$stamp" >> "$autoOutData"
     humanPunch "$project" "$(autoNote "$optNote")"
