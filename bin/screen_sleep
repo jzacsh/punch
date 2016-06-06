@@ -11,8 +11,8 @@ declare -r autoOutDataDir="${XDG_DATA_HOME:-$HOME/.local/share}"
 }
 declare -r autoOutData="$(readlink -f "$autoOutDataDir")"/autopunchout
 
-declare -r attachedSessions="$(tmux list-sessions -F '#{session_attached}')"
-[ "$attachedSessions" = 0 ] || {
+declare -r attachedSessions="$(tmux list-sessions -F '#{session_attached}' 2>/dev/null)"
+{ [ -z "${attachedSessions/ */}" ] || [ "$attachedSessions" = 0 ]; } || {
   printf \
     'Potentially active work in `tmux` (%s sessions attached)\n' \
     "$attachedSessions" >&2
