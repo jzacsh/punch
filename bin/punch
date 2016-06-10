@@ -338,6 +338,7 @@ list() {
         WHERE project='$OPT_PROJECT'
         ORDER BY punch ASC
     ;"
+    local maybeNote
     while read punch stat project note;do
         sum=0
         if (( stat ));then
@@ -359,11 +360,15 @@ list() {
                 to="$(date '+%H:%M' --date="@$punch")"
                 span="$(printf '\t(%s to %s)' "$from" "$to")"
             fi
-            printf "%s%s%s%s%s%s\n" \
-                "$project" "$PUNCH_DELIM" \
-                "$t" "$PUNCH_DELIM" \
-                "$(_aElseB "$startNote" "$note")" \
-                "$span"
+            maybeNote="$(_aElseB "$startNote" "$note")"
+            if [ -n "${maybeNote/ */}" ];then
+                maybeNote="$(printf '\n...\t%s' "$maybeNote")"
+            fi
+            printf "%s  %s  %s%s\n" \
+                "$project" \
+                "$t" \
+                "$span" \
+                "$maybeNote"
         fi
     done < <(db_sql "$q")
 }
@@ -563,7 +568,7 @@ date_fmt_colon() {
         (( digital[d] > 1 )) && plural='s' || plural=''
         (( digital[d] )) && time="${time}${digital[d]} day${plural}, "
     fi
-    echo "${time}${digital[h]}:${digital[m]}:${digital[s]}"
+    printf '%s%2d:%02d:%02d' "$time" "${digital[h]}" "${digital[m]}" "${digital[s]}"
 }
 
 project_total() {
@@ -657,6 +662,7 @@ rangeReport() {
     rStartStmp="$(date +%s --date="$rStart")"
     rEndStmp="$(date +%s --date="$rEnd")"
 
+    local aOrBNote
     local boundaryMsg startNote note project punchAt begin t from to span q="
         SELECT punch, status, project, note
         FROM $DB_TABLE_NAME
@@ -676,12 +682,12 @@ rangeReport() {
             if (( OPT_CLEAN ));then
                 if ! _isInclusiveOf $rStartStmp $rEndStmp $begin;then
                     boundaryMsg="$(printf \
-                        '\twarning: started %s before' \
+                        '\n\twarning: started %s before\n' \
                         "$(date_fmt_colon $(( begin - rStartStmp )) )"
                     )"
                 elif ! _isInclusiveOf $rStartStmp $rEndStmp $punchAt;then
                     boundaryMsg="$(printf \
-                        '\twarning: ended %s after' \
+                        '\n\twarning: ended %s after\n' \
                         "$(date_fmt_colon $(( punchAt - rEndStmp )) )"
                     )"
                 fi
@@ -703,11 +709,16 @@ rangeReport() {
                 to="$(date '+%H:%M' --date="@$punchAt")"
                 span="$(printf '\t(%s to %s)' "$from" "$to")"
             fi
-            printf "%s%s%s%s%s%s\n" \
-                "$project" "$PUNCH_DELIM" \
+
+            aOrBNote="$(_aElseB "$startNote" "$note")"
+            if [ -n "${aOrBNote/ */}" ];then
+                aOrBNote="$(printf '\n\t%s\n' "$aOrBNote")"
+            fi
+            printf "%s\t%s\t%s\t%s%s\n" \
+                "$project" \
                 "$t" \
-                "$(_aElseB "$startNote" "$note")" \
                 "$span" \
+                "$aOrBNote" \
                 "$boundaryMsg"
         fi
     done < <(db_sql "$q")
