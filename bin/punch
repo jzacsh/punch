@@ -511,8 +511,13 @@ date_fmt_colon() {
     # in the result of this arithmetic: `$(date +%s) - raw_epoch_output` --
     # otherwise, you'll get back results like "41 years, etc. etc".
 
-    [[ "$1" =~ $NUMERIC_EXPR ]] || return 1
-    declare -r stamp=$(( 10#$1 ))
+    local hoursMaxBucket=$(( $# == 2 ))
+    if (( hoursMaxBucket ));then
+        declare -r stamp=$(( 10#$2 ))
+    else
+        declare -r stamp=$(( 10#$1 ))
+    fi
+    [[ "$stamp" =~ $NUMERIC_EXPR ]] || return 1
     declare -A digital=(
         [y]=0
         [w]=0
@@ -521,7 +526,7 @@ date_fmt_colon() {
         [m]=0
         [s]=0
     )
-    declare -rA seconds=(
+    declare -rA secondsInA=(
         [y]=$(( 60 * 60 * 24 * 365 ))
         [w]=$(( 60 * 60 * 24 * 7 ))
         [d]=$(( 60 * 60 * 24 ))
@@ -531,28 +536,33 @@ date_fmt_colon() {
 
     local widdle=$stamp
 
-    digital[y]=$(( widdle / seconds[y] ))
-        widdle=$(( widdle % seconds[y] ))
-    digital[w]=$(( widdle / seconds[w] ))
-        widdle=$(( widdle % seconds[w] ))
-    digital[d]=$(( widdle / seconds[d] ))
-        widdle=$(( widdle % seconds[d] ))
-    digital[h]=$(( widdle / seconds[h] ))
-        widdle=$(( widdle % seconds[h] ))
-    digital[m]=$(( widdle / seconds[m] ))
+    if ! (( hoursMaxBucket ));then
+        digital[y]=$(( widdle / secondsInA[y] ))
+            widdle=$(( widdle % secondsInA[y] ))
+        digital[w]=$(( widdle / secondsInA[w] ))
+            widdle=$(( widdle % secondsInA[w] ))
+        digital[d]=$(( widdle / secondsInA[d] ))
+            widdle=$(( widdle % secondsInA[d] ))
+    fi
 
-    digital[s]=$(( widdle % seconds[m] ))
+    digital[h]=$(( widdle / secondsInA[h] ))
+        widdle=$(( widdle % secondsInA[h] ))
+    digital[m]=$(( widdle / secondsInA[m] ))
 
-    local plural
+    digital[s]=$(( widdle % secondsInA[m] ))
+
     local time=''
-    (( digital[y] > 1 )) && plural='s' || plural=''
-    (( digital[y] )) && time="${digital[y]} year${plural}, "
+    if ! (( hoursMaxBucket ));then
+        local plural
+        (( digital[y] > 1 )) && plural='s' || plural=''
+        (( digital[y] )) && time="${digital[y]} year${plural}, "
 
-    (( digital[w] > 1 )) && plural='s' || plural=''
-    (( digital[w] )) && time="${time}${digital[w]} week${plural}, "
+        (( digital[w] > 1 )) && plural='s' || plural=''
+        (( digital[w] )) && time="${time}${digital[w]} week${plural}, "
 
-    (( digital[d] > 1 )) && plural='s' || plural=''
-    (( digital[d] )) && time="${time}${digital[d]} day${plural}, "
+        (( digital[d] > 1 )) && plural='s' || plural=''
+        (( digital[d] )) && time="${time}${digital[d]} day${plural}, "
+    fi
     echo "${time}${digital[h]}:${digital[m]}:${digital[s]}"
 }
 
@@ -588,13 +598,13 @@ remove() {
 #get the current completed total
 spent() {
     local t=$(project_total "$OPT_PROJECT")
-    { (( $# > 0 )) || (( OPT_CLEAN )); } && echo "$t" || date_fmt_colon "$t"
+    (( OPT_CLEAN )) && echo "$t" || date_fmt_colon "$t"
 }
 
 #get the current running total
 running() {
     local total q r stat started running sofar
-    total=$(spent --force-clean)
+    total=$(project_total "$OPT_PROJECT")
 
     q="
         SELECT status, punch
@@ -613,7 +623,7 @@ running() {
     )
     running=$(( sofar + total ))
 
-    (( OPT_CLEAN )) && echo "$running" || date_fmt_colon "$running"
+    (( OPT_CLEAN )) && echo "$running" || date_fmt_colon --hours "$running"
 }
 
 # Is integer range [$1,$2] inclusive of $3
