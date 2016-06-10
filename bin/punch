@@ -581,15 +581,13 @@ remove() {
 #get the current completed total
 spent() {
     local t=$(project_total "$OPT_PROJECT")
-    (( OPT_CLEAN )) && echo "$t" || date_fmt_colon "$t"
+    { (( $# > 0 )) || (( OPT_CLEAN )); } && echo "$t" || date_fmt_colon "$t"
 }
 
 #get the current running total
 running() {
     local total q r stat started running sofar
-    _orig_opt="$OPT_CLEAN"
-    OPT_CLEAN=1; total=$(spent)
-    OPT_CLEAN="$_orig_opt"
+    total=$(spent --force-clean)
 
     q="
         SELECT status, punch
