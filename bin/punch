@@ -628,7 +628,9 @@ running() {
     )
     running=$(( sofar + total ))
 
-    (( OPT_CLEAN )) && echo "$running" || date_fmt_colon --hours "$running"
+    (( OPT_CLEAN )) &&
+        echo "$running" ||
+        { date_fmt_colon --hours "$running"; echo; }
 }
 
 # Is integer range [$1,$2] inclusive of $3
