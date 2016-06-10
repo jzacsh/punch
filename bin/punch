@@ -529,12 +529,19 @@ date_fmt_colon() {
         [m]=60
     )
 
-    digital[y]=$(( stamp / seconds[y] ))
-    digital[w]=$(( $(( stamp - $(( digital[y] * seconds[y] )) )) / seconds[w] ))
-    digital[d]=$(( $(( stamp - $(( digital[w] * seconds[w] )) )) / seconds[d] ))
-    digital[h]=$(( $(( stamp - $(( digital[d] * seconds[d] )) )) / seconds[h] ))
-    digital[m]=$(( $(( stamp - $(( digital[h] * seconds[h] )) )) / seconds[m] ))
-    digital[s]=$(( stamp % seconds[m] ))
+    local widdle=$stamp
+
+    digital[y]=$(( widdle / seconds[y] ))
+        widdle=$(( widdle % seconds[y] ))
+    digital[w]=$(( widdle / seconds[w] ))
+        widdle=$(( widdle % seconds[w] ))
+    digital[d]=$(( widdle / seconds[d] ))
+        widdle=$(( widdle % seconds[d] ))
+    digital[h]=$(( widdle / seconds[h] ))
+        widdle=$(( widdle % seconds[h] ))
+    digital[m]=$(( widdle / seconds[m] ))
+
+    digital[s]=$(( widdle % seconds[m] ))
 
     local plural
     local time=''
