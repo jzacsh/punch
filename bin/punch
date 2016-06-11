@@ -714,7 +714,7 @@ rangeReport() {
 
             aOrBNote="$(_aElseB "$startNote" "$note")"
             if [ -n "${aOrBNote/ */}" ];then
-                aOrBNote="$(printf '\n\t%s\n' "$aOrBNote")"
+                aOrBNote="$(printf '\n...\t%s\n' "$aOrBNote")"
             fi
             printf "%s\t%s\t%s\t%s%s\n" \
                 "$project" \
