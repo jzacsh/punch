@@ -656,8 +656,6 @@ rangeReport() {
           rEnd="$(printf '%s 23:59' "$(date --iso-8601 --date="$rStart")")"
     else
         rEnd="${OPT_RANGE/*,/}"; _assertValidDateFormat "$rEnd"
-        error "end range (from $rStart to $rEnd) not yet implemented!"
-        die $E_ERROR
     fi
 
     local rStartStmp rEndStmp
