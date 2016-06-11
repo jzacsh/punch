@@ -723,8 +723,11 @@ rangeReport() {
         fi
     done < <(db_sql "$q")
 
-    printf '\nTOTAL:\t%s spent on "%s", between %s and %s\n' \
-        "$(date_fmt_colon $grandTotal)" "$OPT_PROJECT" "$rStart" "$rEnd"
+    printf '\nTOTAL:\t%s (H:M:S) spent on "%s"\n\tFROM:\t%s\n\tTO:\t%s\n' \
+        "$(date_fmt_colon --hours $grandTotal)" \
+        "$OPT_PROJECT" \
+        "$(date --iso-8601=s --date="$rStart")" \
+        "$(date --iso-8601=s --date="$rEnd")"
 }
 
 #get a listing of the current open project click-ins
