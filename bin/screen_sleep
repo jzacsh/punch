@@ -6,7 +6,8 @@ set -e
 declare -r autoOutDataDir="${XDG_DATA_HOME:-$HOME/.local/share}"
 { [ -d "$autoOutDataDir" ] && [ -w "$autoOutDataDir" ]; } || {
   printf 'Error: nowhere to store data!
-  $XDG_DATA_HOME or default not writeable directories.\n' >&2
+  $XDG_DATA_HOME or default not writeable directories:\n\t%s\n' \
+    "$autoOutDataDir" >&2
   exit 1
 }
 declare -r autoOutData="$(readlink -f "$autoOutDataDir")"/autopunchout
