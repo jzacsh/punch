@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 #
 # Punch out of active sessions (or in if $1=in).
+#   $2=--force   Causes potential headless activity to be ignored
 set -e
+
+if [[ $# -eq 2 ]] && [[ $2 = --force ]];then
+  declare -r shouldForce=1
+else
+  declare -r shouldForce=0
+fi
 
 declare -r autoOutDataDir="${XDG_DATA_HOME:-$HOME/.local/share}"
 { [ -d "$autoOutDataDir" ] && [ -w "$autoOutDataDir" ]; } || {
@@ -12,13 +19,13 @@ declare -r autoOutDataDir="${XDG_DATA_HOME:-$HOME/.local/share}"
 }
 declare -r autoOutData="$(readlink -f "$autoOutDataDir")"/autopunchout
 
-declare -r attachedSessions="$(tmux list-sessions -F '#{session_attached}' 2>/dev/null)"
-{ [ -z "${attachedSessions/ */}" ] || [ "$attachedSessions" = 0 ]; } || {
-  printf \
-    'Potentially active work in `tmux` (%s sessions attached)\n' \
-    "$attachedSessions" >&2
-  exit 1
-}
+isPossibleHeadlessActivity() (
+  systemctl is-active ssh >/dev/null || return 1
+
+  local attachedSessions
+  attachedSessions="$(tmux list-sessions -F '#{session_attached}' 2>/dev/null)"
+  { [ -n "${attachedSessions/ */}" ] && [ "$attachedSessions" -gt 0 ]; }
+)
 
 declare -r mode="$1"
 { [ -n "${mode/ */}" ] && { [ "$mode" = 'in' ] || [ "$mode" = 'out' ]; }; } || {
@@ -54,22 +61,39 @@ autoNote() (
 isPunchedInto() ( punch -seq 2>&1 | grep "$1" >/dev/null 2>&1; )
 
 humanPunch() (
-  local p="$1"; shift
-  punch -p -c "$p" "$@"
-
   # punch's schema set's the punch stamps as unique; so we must behave a little
   # more human in this script
   sleep 1
+
+  local p="$1"; shift
+  punch -p -c "$p" "$@"
+)
+
+maybeBailForHeadlessActivity() (
+  isPossibleHeadlessActivity || return 0
+
+  printf \
+    'Potentially active work in `tmux` (%s sessions attached)\n\t' \
+    "$attachedSessions" >&2
+  if [[ $shouldForce -eq 1 ]];then
+    printf 'IGNORING said tmux sessions due to --force\n' >&2
+  else
+    printf 'EXITING incase said activity would be cut-off\n' >&2
+    exit 1
+  fi
 )
 
 if [ "$mode" = out ];then
   punch -se >/dev/null 2>&1 || exit 0 # not punched into anything
+
+  maybeBailForHeadlessActivity
 
   punch -se | while read project stamp optNote;do
     printf '%s\t%s\n' "$project" "$stamp" >> "$autoOutData"
     humanPunch "$project" "$(autoNote "$optNote")"
   done
 elif [ "$mode" = 'in' ];then
+  maybeBailForHeadlessActivity
   while read project stamp;do
     if isPunchedInto "$project";then
       printf \
