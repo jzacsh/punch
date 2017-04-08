@@ -166,6 +166,7 @@ func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 	if e != nil {
 		return errors.New(fmt.Sprintf("punch cards: %s", e))
 	}
+	defer db.Close()
 
 	if len(args) == 0 {
 		return queryDump(db)
