@@ -45,8 +45,8 @@ COMMANDS
     below. If no QUERY is provided, a dump of the database as comma-separated
     values will be generated (ordered by punch-date, one-punch per-line).
   - list: Lists all "clients"/"projects" for which records currently exist
-  - report CLIENT [FROM_STAMP]: Prints a general report on CLIENT provided. If a
-    unix timestamp FROM_STAMP of seconds specified, is used as furthest boundary
+  - report CLIENT [FROM_STAMP]: Prints a general report on the CLIENT provided. If a
+    unix timestamp FROM_STAMP (in seconds) is specified, it's used as furthest boundary
     back to fetch records. To produce a valid FROM_STAMP, GNU's DATE(1) provides
     an excellent parser, eg: 'date --date=yesterday', 'date --date="8pm next Fri"'.
   - status: prints running-time on any currently punched-into projects.
