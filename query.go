@@ -110,8 +110,6 @@ func queryClients(db *sql.DB) error {
 	return nil
 }
 
-// TODO(zacsh) print notice of timezone in parenthesis in header, then exclude
-// from record output
 func queryDump(db *sql.DB) error {
 	rows, e := db.Query(`SELECT * FROM punchcard ORDER BY punch ASC;`)
 	if e != nil {
@@ -119,7 +117,7 @@ func queryDump(db *sql.DB) error {
 	}
 	defer rows.Close()
 
-	fmt.Printf("Punch, Status, Project, Note\n")
+	fmt.Printf("Punch [%s], Status, Project, Note\n", time.Now().Format("-0700 MST"))
 	for rows.Next() {
 		punch, e := scanToCard(rows)
 		if e != nil {
@@ -127,7 +125,7 @@ func queryDump(db *sql.DB) error {
 		}
 		fmt.Printf(
 			"%s, %s, %s, %s\n",
-			punch.Punch,
+			punch.Punch.Format("2006.01.02 15:04:05"),
 			fromStatus(punch.IsStart),
 			punch.Project,
 			fromNote(punch.Note))
