@@ -50,6 +50,10 @@ func (from *CardSchema) toSession(to *CardSchema) *Session {
 //////////////////////////////////
 // Pretty printers for above datas
 
+func (s *Session) durationToStr() string {
+	return durationToStr(s.Duration)
+}
+
 func durationToStr(d time.Duration) string {
 	daysStr := ""
 	days := int(d.Hours()) / 24
@@ -57,7 +61,13 @@ func durationToStr(d time.Duration) string {
 		daysStr = fmt.Sprintf("%f days ", days)
 	}
 	h, m, s := durationToHMS(d)
-	return fmt.Sprintf("%s%02d:%02d:%02d", daysStr, h, m, s)
+	colonIf := func(q int) string {
+		if q > 0 {
+			return fmt.Sprintf("%02d:", q)
+		}
+		return ""
+	}
+	return fmt.Sprintf("%s%s%02d:%02d", daysStr, colonIf(h), m, s)
 }
 
 func durationToHMS(d time.Duration) (int, int, int) {

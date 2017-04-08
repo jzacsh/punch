@@ -57,7 +57,7 @@ func queryClient(db *sql.DB, client string) error {
 				outPunchFormat = "01-02" + outPunchFormat
 			}
 			fmt.Printf("  %s from %s to %s",
-				session.Duration,
+				session.durationToStr(),
 				session.StartAt.Format("2006-01-02 15:04:05.99999"),
 				session.StopAt.Format(outPunchFormat))
 			if len(session.NoteStart) > 0 {
