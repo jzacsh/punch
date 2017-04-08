@@ -132,6 +132,24 @@ func queryClients(db *sql.DB) error {
 	return nil
 }
 
+func countProjects(db *sql.DB) (int, error) {
+	rows, e := db.Query(`SELECT COUNT(DISTINCT project) FROM punchcard;`)
+	if e != nil {
+		return 0, e
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var count int
+		if e := rows.Scan(&count); e != nil {
+			return 0, e
+		}
+		return count, nil
+	}
+
+	return 0, nil // zero projects found
+	// TODO double check this would result in empty rows.Next()
+}
+
 func queryDump(db *sql.DB) error {
 	rows, e := db.Query(`SELECT * FROM punchcard ORDER BY punch ASC;`)
 	if e != nil {
