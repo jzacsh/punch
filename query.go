@@ -110,6 +110,8 @@ func queryClients(db *sql.DB) error {
 	return nil
 }
 
+// TODO(zacsh) print notice of timezone in parenthesis in header, then exclude
+// from record output
 func queryDump(db *sql.DB) error {
 	rows, e := db.Query(`SELECT * FROM punchcard ORDER BY punch ASC;`)
 	if e != nil {
