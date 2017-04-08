@@ -174,13 +174,14 @@ func queryStatus(db *sql.DB) error {
 		if e != nil {
 			return e
 		}
-		if !punch.IsStart {
-			return nil // was a punch-out; not punched in
+		if punch.IsStart {
+			fmt.Printf(
+				"%s: %s so far\n",
+				punch.Project,
+				durationToStr(time.Since(punch.Punch)))
+		} else {
+			fmt.Fprintf(os.Stderr, "Not on the clock.\n")
 		}
-		fmt.Printf(
-			"%s: %s so far\n",
-			punch.Project,
-			durationToStr(time.Since(punch.Punch)))
 	}
 	return nil
 }
