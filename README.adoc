@@ -1,7 +1,9 @@
 = `Punch` in Golang
+:punchsh: https://github.com/jzacsh/punch/tree/a1e40862a7
+:batsexec: https://gist.github.com/jzacsh/65fb4df01e3dbf23a2a4#file-test-sh
 
 See original punch implementation here:
-  https://github.com/jzacsh/punch/tree/a1e40862a7
+  {punchsh}[`bin/punch` script of github.com/jzacsh/punch]
 _(a thousand lines of bash 4 without test coverage)_
 
 == Development
@@ -20,3 +22,18 @@ $ ./punch # will throw error without a $PUNCH_CARD
 $ export PUNCH_CARD=./sample.card
 $ ./punch # will now be happy, having a usable card
 ----
+
+== Status
+
+Intentions: I'm currently writing this for fun on spring break, because I miss
+writing code. No idea if I have any plans to ever finish this.
+
+
+As of git tag `v0.subcmd.query` the `report` subcommand is basically complete.
+Still remaining, to reach the {punchsh}[shell implementation's level of
+completion] is:
+
+.TODO
+. *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
+. `punch in` subcommand
+. `punch out` subcommand
