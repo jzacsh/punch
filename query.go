@@ -16,7 +16,28 @@ func scanToCard(rows *sql.Rows) (*CardSchema, error) {
 	return raw.toCard(), nil
 }
 
-func dump(db *sql.DB) error {
+func queryClients(db *sql.DB) error {
+	rows, e := db.Query(`
+		SELECT DISTINCT(project) as project
+		FROM punchcard ORDER BY project ASC;
+	`)
+	if e != nil {
+		return e
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var client string
+		if e := rows.Scan(&client); e != nil {
+			return e
+		}
+		fmt.Printf("%s\n", client)
+	}
+
+	return nil
+}
+
+func queryDump(db *sql.DB) error {
 	rows, e := db.Query(`SELECT * FROM punchcard ORDER BY punch ASC;`)
 	if e != nil {
 		return e
@@ -47,7 +68,9 @@ func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 	}
 
 	if len(args) == 0 {
-		return dump(db)
+		return queryDump(db)
+	} else if args[0] == "list" {
+		return queryClients(db)
 	}
 
 	return nil
