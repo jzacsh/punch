@@ -183,18 +183,25 @@ func queryDump(db *sql.DB) error {
 			sessionsFor[punch.Project] = append(
 				sessionsFor[punch.Project],
 				*((&lastPunch).toSession(punch)))
+			lastPunchInFor[punch.Project] = emptyCard
 		}
 	}
 
-	fmt.Printf("\nProject, Sessions, Worked Time\n")
+	fmt.Printf("\nProject, Sessions, Status, Worked Time\n")
 	for project, sessions := range sessionsFor {
 		var total time.Duration
 		for _, session := range sessions {
 			total += session.Duration
 		}
+
+		status := "n/a"
+		last := lastPunchInFor[project]
+		if !last.isEmptyCard() && last.IsStart {
+			status = "WORKING"
+		}
 		fmt.Printf(
-			fmt.Sprintf("%s+%d%s\n", "%", int(longestProjectStr), "s, %4d, %s"),
-			project, len(sessions), durationToStr(total))
+			fmt.Sprintf("%s+%d%s\n", "%", int(longestProjectStr), "s, %4d, %s, %s"),
+			project, len(sessions), status, durationToStr(total))
 	}
 
 	return nil

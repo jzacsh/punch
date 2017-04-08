@@ -19,6 +19,12 @@ type CardSchema struct {
 	Note    string
 }
 
+var emptyCard CardSchema
+
+func (c *CardSchema) isEmptyCard() bool {
+	return *c == emptyCard
+}
+
 func (raw *CardSchemaRaw) toCard() *CardSchema {
 	return &CardSchema{
 		Punch:   time.Unix(int64(raw.Punch), 0 /*nanoseconds*/),
