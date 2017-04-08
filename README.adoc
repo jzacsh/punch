@@ -2,6 +2,7 @@
 
 See original punch implementation here:
   https://github.com/jzacsh/punch/tree/a1e40862a7
+_(a thousand lines of bash 4 without test coverage)_
 
 == Development
 
