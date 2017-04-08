@@ -37,10 +37,30 @@ COMMANDS
     Allows you to query your work activity.
 `
 
+func failNotYetImplemented(whatFailed string) {
+	fmt.Fprintf(
+		os.Stderr, "nothing implemented yet (not even '%s' subcommand)\n",
+		whatFailed)
+	os.Exit(99)
+}
+
 func main() {
 	if len(os.Args) < 2 ||
 		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
 		fmt.Fprintf(os.Stderr, usageDoc)
+		os.Exit(1)
+	}
+
+	switch os.Args[1] {
+	case "i", "in":
+		failNotYetImplemented(os.Args[1])
+	case "o", "out":
+		failNotYetImplemented(os.Args[1])
+	case "q", "query":
+		failNotYetImplemented(os.Args[1])
+	default:
+		fmt.Fprintf(os.Stderr,
+			"valid sub-command required (ie: not '%s'); try --h for usage\n", os.Args[1])
 		os.Exit(1)
 	}
 }
