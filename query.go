@@ -32,7 +32,7 @@ func queryClient(db *sql.DB, client string) error {
 
 	var numSessions int
 	var total time.Duration
-	fmt.Printf("Report on '%s':\n", client)
+	fmt.Printf("Report on '%s' (in %s):\n", client, time.Now().Format("-0700 MST"))
 	var punches []*CardSchema
 	numRecords := 0
 	for rows.Next() {
@@ -52,11 +52,11 @@ func queryClient(db *sql.DB, client string) error {
 			numSessions++
 			total += session.Duration
 
-			outPunchFormat := "15:04:05.9999 -0700 MST"
+			outPunchFormat := "15:04:05.9999"
 			if session.Duration > time.Hour*22 {
 				outPunchFormat = "01-02" + outPunchFormat
 			}
-			fmt.Printf("  %s from %s to %s",
+			fmt.Printf(fmt.Sprintf("%s%d%s", "%", durationToStrMaxLen, "s from %s to %s"),
 				session.durationToStr(),
 				session.StartAt.Format("2006-01-02 15:04:05.99999"),
 				session.StopAt.Format(outPunchFormat))
