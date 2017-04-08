@@ -238,6 +238,8 @@ func queryStatus(db *sql.DB) error {
 	return nil
 }
 
+// Subcommand "query" driver; has it own subcommands `args` which drive its
+// response
 func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 	db, e := sql.Open("sqlite3", dbPath)
 	if e != nil {
