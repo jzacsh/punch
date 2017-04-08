@@ -15,7 +15,7 @@ func durationToStr(d time.Duration) string {
 	daysStr := ""
 	days := int(d.Hours()) / 24
 	if days > 0 {
-		daysStr = fmt.Sprintf("%f days ", days)
+		daysStr = fmt.Sprintf("%d days ", days)
 	}
 	h, m, s := durationToHMS(d)
 	colonIf := func(q int) string {
