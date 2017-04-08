@@ -23,7 +23,8 @@ COMMANDS
     Allows you to punch into work on a "client" or "project" (how exactly you
     classify your work with this time keeping program is irrelevant to the
     program).
-  - CLIENT: Name of the client to punch into work for
+  - CLIENT: Name of the client to punch into work for. Must be an alphanumeric
+    string (case-sensitive).
   - NOTE: Notes you'd like to show up when reporting, anything you want to be
     on the record about this work period. (Eg: "trying to finish design doc v3").
 
