@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type CardSchemaRaw struct {
+type CardSchemaSQL struct {
 	Punch   int // unix stamp seconds; primary key
 	Status  int // (pseudo-boolean) 1,0
 	Project string
@@ -25,7 +25,7 @@ func (c *CardSchema) isEmptyCard() bool {
 	return *c == emptyCard
 }
 
-func (raw *CardSchemaRaw) toCard() *CardSchema {
+func (raw *CardSchemaSQL) toCard() *CardSchema {
 	return &CardSchema{
 		Punch:   time.Unix(int64(raw.Punch), 0 /*nanoseconds*/),
 		IsStart: raw.Status == 1,
