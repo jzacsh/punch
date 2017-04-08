@@ -2,3 +2,12 @@
 
 See original punch implementation here:
   https://github.com/jzacsh/punch/tree/a1e40862a7
+
+== Development
+
+.prerequisites
+----
+$ go get github.com/mattn/go-sqlite3
+----
+
+`make punch` to build. no tests written, yet.
