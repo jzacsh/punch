@@ -19,7 +19,7 @@ DESCRIPTION
   $%s environment variable
 
 COMMANDS
-  One of the below sub-commands is expected, otherwise "query status" is assumed.
+  One of the below sub-commands is expected, otherwise "query %s" is assumed.
 
   i|in    CLIENT [NOTE]
     Allows you to punch into work on a "client" or "project" (how exactly you
@@ -81,7 +81,7 @@ func isDbReadableFile() (string, os.FileInfo, error) {
 func main() {
 	if len(os.Args) > 1 &&
 		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
-		fmt.Fprintf(os.Stderr, usageDoc, dbEnvVar)
+		fmt.Fprintf(os.Stderr, usageDoc, dbEnvVar, queryDefaultCmd)
 		os.Exit(1)
 	}
 
