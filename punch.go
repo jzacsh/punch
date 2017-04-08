@@ -28,6 +28,9 @@ COMMANDS
     currently clocked-in client, if only one. Causes an error if you're not clocked
      into anything.
   - NOTE: Optional note, identical in purpose to that of 'in' command's NOTE option.
+
+  q|query    [CLIENT]
+    Allows you to query your work activity.
 `
 
 func main() {
