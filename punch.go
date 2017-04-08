@@ -10,7 +10,7 @@ import (
 
 const dbEnvVar string = "PUNCH_CARD"
 const usageDoc string = `NAME
-  punch - log & report hours worked on any project
+  punch - logs & reports time worked on any project
 
 SYNOPSIS
   punch [in|out|query]
@@ -22,23 +22,20 @@ DESCRIPTION
 COMMANDS
   One of the below sub-commands is expected, otherwise "query %s" is assumed.
 
-  i|in    CLIENT [NOTE]
-    Allows you to punch into work on a "client" or "project" (how exactly you
-    classify your work with this time keeping program is irrelevant to the
-    program).
-  - CLIENT: Name of the client to punch into work for. Must be an alphanumeric
-    string (case-sensitive).
-  - NOTE: Notes you'd like to show up when reporting, anything you want to be
-    on the record about this work period. (Eg: "trying to finish design doc v3").
+  p|punch    [CLIENT] [-n NOTE]
+    Allows punching in and out of work on a "client" or "project" indiciated by CLIENT.
 
+    There are two uses for this command:
+    - 1) starting work: "punching in" to start the clock for some project or client
+    - 2) stopping work: "punching out" to stop the clock for some project or client
+    In both cases CLIENT indicates which client/project to starting/stopping work on.
 
-  o|out    [CLIENT] [-n NOTE]
-    Allows you to punch out of work on which ever
-  - CLIENT: Required if you're currently clocked into multiple clients (Eg: if
-    perhaps you're using "clients" to mean "projects"). Defaults to the
-    currently clocked-in client, if only one. Causes an error if you're not clocked
-     into anything.
-  - NOTE: Optional note, identical in purpose to that of 'in' command's NOTE option.
+    If CLIENT Is not provided, it's assumed you're trying to implicitly punch
+    out. If you're not punched into exactly one CLIENT already, then no-arg punching
+    will have no safe assumptions to make, and the command will fail.
+
+    Optionally, passing -n NOTE indicates that NOTE string should be stored for
+    future reference for this punchcard entry.
 
   q|query    [QUERY...]
     Allows you to query your work activity, where QUERY is any one of the
@@ -54,16 +51,17 @@ COMMANDS
 ENVIRONMENT
   Work clock is an SQLite3 database file, path to which is expected to be in
   $%s environment variable.
+
+EXAMPLES:
+  $ punch # same as "punch query %s"
+  ch: 99:01 so far
+  $ punch p -n 'phew, finished proving hypothesis'
+  $ punch
+  Not on the clock.
+  $ punch p puzzles -n 'free time to tackle tetris in Brainfuck'
 `
 
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
-
-func failNotYetImplemented(whatFailed string) {
-	fmt.Fprintf(
-		os.Stderr, "nothing implemented yet (not even '%s' subcommand)\n",
-		whatFailed)
-	os.Exit(99)
-}
 
 func isDbReadableFile() (string, os.FileInfo, error) {
 	p := os.Getenv(dbEnvVar)
@@ -89,7 +87,7 @@ func isDbReadableFile() (string, os.FileInfo, error) {
 func main() {
 	if len(os.Args) > 1 &&
 		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
-		fmt.Fprintf(os.Stderr, usageDoc, queryDefaultCmd, dbEnvVar)
+		fmt.Fprintf(os.Stderr, usageDoc, queryDefaultCmd, dbEnvVar, queryDefaultCmd)
 		os.Exit(0)
 	}
 
@@ -110,10 +108,9 @@ func main() {
 	}
 
 	switch os.Args[1] {
-	case "i", "in":
-		failNotYetImplemented(os.Args[1])
-	case "o", "out":
-		failNotYetImplemented(os.Args[1])
+	case "p", "punch":
+		fmt.Fprintf(os.Stderr, "p[unch] subcommand not implemented)\n")
+		os.Exit(99)
 	case "q", "query":
 		if e := cardQuery(dbInfo, dbPath, os.Args[2:]); e != nil {
 			fmt.Fprintf(os.Stderr, "query failed: %s\n", e)
