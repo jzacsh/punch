@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -26,6 +27,48 @@ func (raw *CardSchemaRaw) toCard() *CardSchema {
 		Project: raw.Project,
 		Note:    strings.TrimSpace(raw.Note),
 	}
+}
+
+type Session struct {
+	StartAt   time.Time
+	StopAt    time.Time
+	Duration  time.Duration
+	NoteStart string
+	NoteStop  string
+}
+
+func (from *CardSchema) toSession(to *CardSchema) *Session {
+	return &Session{
+		StartAt:   from.Punch,
+		StopAt:    to.Punch,
+		Duration:  to.Punch.Sub(from.Punch),
+		NoteStart: from.Note,
+		NoteStop:  to.Note,
+	}
+}
+
+//////////////////////////////////
+// Pretty printers for above datas
+
+func durationToStr(d time.Duration) string {
+	daysStr := ""
+	days := int(d.Hours()) / 24
+	if days > 0 {
+		daysStr = fmt.Sprintf("%f days ", days)
+	}
+	h, m, s := durationToHMS(d)
+	return fmt.Sprintf("%s%02d:%02d:%02d", daysStr, h, m, s)
+}
+
+func durationToHMS(d time.Duration) (int, int, int) {
+	days := int(d.Hours()) / 24
+	h := int((d - time.Duration(days)*time.Hour*24).Hours()) % 24
+	m := int((d - time.Duration(days)*time.Hour*24 -
+		time.Duration(h)*time.Hour).Minutes())
+	s := int((d - time.Duration(days)*time.Hour*24 -
+		time.Duration(h)*time.Hour -
+		time.Duration(m)*time.Minute).Seconds())
+	return h, m, s
 }
 
 func fromStatus(status bool) string {

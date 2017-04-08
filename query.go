@@ -19,27 +19,6 @@ func scanToCard(rows *sql.Rows) (*CardSchema, error) {
 	return raw.toCard(), nil
 }
 
-func durationToHMS(d time.Duration) (int, int, int) {
-	days := int(d.Hours()) / 24
-	h := int((d - time.Duration(days)*time.Hour*24).Hours()) % 24
-	m := int((d - time.Duration(days)*time.Hour*24 -
-		time.Duration(h)*time.Hour).Minutes())
-	s := int((d - time.Duration(days)*time.Hour*24 -
-		time.Duration(h)*time.Hour -
-		time.Duration(m)*time.Minute).Seconds())
-	return h, m, s
-}
-
-func durationToStr(d time.Duration) string {
-	daysStr := ""
-	days := int(d.Hours()) / 24
-	if days > 0 {
-		daysStr = fmt.Sprintf("%f days ", days)
-	}
-	h, m, s := durationToHMS(d)
-	return fmt.Sprintf("%s%02d:%02d:%02d", daysStr, h, m, s)
-}
-
 func queryClient(db *sql.DB, client string) error {
 	rows, e := db.Query(`
 		SELECT * FROM punchcard
@@ -69,24 +48,23 @@ func queryClient(db *sql.DB, client string) error {
 				card.Punch.Unix(), fromNote(card.Note))
 			continue
 		} else if !card.Status {
-			punchIn := punches[len(punches)-1]
+			session := punches[len(punches)-1].toSession(card)
 			numSessions++
-			duration := card.Punch.Sub(punchIn.Punch)
-			total += duration
+			total += session.Duration
 
 			outPunchFormat := "15:04:05.9999 -0700 MST"
-			if duration > time.Hour*22 {
+			if session.Duration > time.Hour*22 {
 				outPunchFormat = "01-02" + outPunchFormat
 			}
 			fmt.Printf("  %s from %s to %s",
-				duration,
-				punchIn.Punch.Format("2006-01-02 15:04:05.99999"),
-				card.Punch.Format(outPunchFormat))
-			if len(punchIn.Note) > 0 {
-				fmt.Printf(" %s", punchIn.Note)
+				session.Duration,
+				session.StartAt.Format("2006-01-02 15:04:05.99999"),
+				session.StopAt.Format(outPunchFormat))
+			if len(session.NoteStart) > 0 {
+				fmt.Printf(" %s", session.NoteStart)
 			}
-			if len(card.Note) > 0 {
-				fmt.Printf(" %s", card.Note)
+			if len(session.NoteStop) > 0 {
+				fmt.Printf(" %s", session.NoteStop)
 			}
 			fmt.Printf("\n")
 		}
