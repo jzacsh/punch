@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -138,6 +139,10 @@ func queryDump(db *sql.DB) error {
 	}
 	defer rows.Close()
 
+	var longestProjectStr float64
+
+	lastPunchInFor := make(map[string]CardSchema)
+	sessionsFor := make(map[string][]Session)
 	fmt.Printf("Punch [%s], Status, Project, Note\n", getTZContext())
 	for rows.Next() {
 		punch, e := scanToCard(rows)
@@ -150,6 +155,28 @@ func queryDump(db *sql.DB) error {
 			fromStatus(punch.IsStart),
 			punch.Project,
 			fromNote(punch.Note))
+
+		longestProjectStr = math.Max(float64(len(punch.Project)), longestProjectStr)
+
+		if punch.IsStart {
+			lastPunchInFor[punch.Project] = *punch
+		} else {
+			lastPunch := lastPunchInFor[punch.Project]
+			sessionsFor[punch.Project] = append(
+				sessionsFor[punch.Project],
+				*((&lastPunch).toSession(punch)))
+		}
+	}
+
+	fmt.Printf("\nProject, Sessions, Worked Time\n")
+	for project, sessions := range sessionsFor {
+		var total time.Duration
+		for _, session := range sessions {
+			total += session.Duration
+		}
+		fmt.Printf(
+			fmt.Sprintf("%s+%d%s\n", "%", int(longestProjectStr), "s, %4d, %s"),
+			project, len(sessions), durationToStr(total))
 	}
 
 	return nil
