@@ -49,22 +49,22 @@ func failNotYetImplemented(whatFailed string) {
 	os.Exit(99)
 }
 
-func isDbReadableFile() error {
-	path := os.Getenv(dbEnvVar)
-	if len(path) == 0 {
-		return errors.New(fmt.Sprintf("$%s is not set", dbEnvVar))
+func isDbReadableFile() (string, os.FileInfo, error) {
+	p := os.Getenv(dbEnvVar)
+	if len(p) == 0 {
+		return "", nil, errors.New(fmt.Sprintf("$%s is not set", dbEnvVar))
 	}
 
-	f, e := os.Stat(path)
+	f, e := os.Stat(p)
 	if e != nil {
-		return errors.New(fmt.Sprintf(
-			"$%s could not be read; tried, '%s'", dbEnvVar, path))
+		return p, f, errors.New(fmt.Sprintf(
+			"$%s could not be read; tried, '%s'", dbEnvVar, p))
 	}
 
 	if f.IsDir() {
-		return errors.New(fmt.Sprintf("$%s must be a regular file", dbEnvVar))
+		return "", f, errors.New(fmt.Sprintf("$%s must be a regular file", dbEnvVar))
 	}
-	return nil
+	return p, f, nil
 }
 
 func main() {
@@ -76,7 +76,8 @@ func main() {
 
 	// TODO(zacsh) graceful first-time creation, eg:
 	//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
-	if e := isDbReadableFile(); e != nil {
+	dbPath, dbInfo, e := isDbReadableFile()
+	if e != nil {
 		fmt.Fprintf(os.Stderr, "Error checking database (see -h): %s\n", e)
 		os.Exit(1)
 	}
@@ -87,7 +88,10 @@ func main() {
 	case "o", "out":
 		failNotYetImplemented(os.Args[1])
 	case "q", "query":
-		failNotYetImplemented(os.Args[1])
+		if e := cardQuery(dbInfo, dbPath, os.Args[2:]); e != nil {
+			fmt.Fprintf(os.Stderr, "query failed: %s\n", e)
+			os.Exit(1)
+		}
 	default:
 		fmt.Fprintf(os.Stderr,
 			"valid sub-command required (ie: not '%s'); try --h for usage\n", os.Args[1])
