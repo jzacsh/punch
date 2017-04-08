@@ -74,6 +74,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	// TODO(zacsh) graceful first-time creation, eg:
+	//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
 	if e := isDbReadableFile(); e != nil {
 		fmt.Fprintf(os.Stderr, "Error checking database (see -h): %s\n", e)
 		os.Exit(1)
