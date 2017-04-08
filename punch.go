@@ -42,6 +42,7 @@ COMMANDS
     below. If no QUERY is provided, a dump of the database as comma-separated
     values will be generated (ordered by punch-date, one-punch per-line).
   - list: Lists all "clients"/"projects" for which records currently exist
+  - report CLIENT: Prints a general report on CLIENT provided.
 `
 
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
