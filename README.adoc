@@ -12,3 +12,11 @@ $ go get github.com/mattn/go-sqlite3
 ----
 
 `make punch` to build. no tests written, yet.
+
+.helpful sample punchcard
+----
+$ make
+$ ./punch # will throw error without a $PUNCH_CARD
+$ export PUNCH_CARD=./sample.card
+$ ./punch # will now be happy, having a usable card
+----

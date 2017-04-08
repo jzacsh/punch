@@ -15,9 +15,6 @@ DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
   for some obvious stats & reporting you might want.
 
-  Work clock is an SQLite3 database file, path to which is expected to be in
-  $%s environment variable
-
 COMMANDS
   One of the below sub-commands is expected, otherwise "query %s" is assumed.
 
@@ -46,6 +43,10 @@ COMMANDS
   - list: Lists all "clients"/"projects" for which records currently exist
   - report CLIENT: Prints a general report on CLIENT provided.
   - status: prints running-time on any currently punched-into projects.
+
+ENVIRONMENT
+  Work clock is an SQLite3 database file, path to which is expected to be in
+  $%s environment variable.
 `
 
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
@@ -81,7 +82,7 @@ func isDbReadableFile() (string, os.FileInfo, error) {
 func main() {
 	if len(os.Args) > 1 &&
 		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
-		fmt.Fprintf(os.Stderr, usageDoc, dbEnvVar, queryDefaultCmd)
+		fmt.Fprintf(os.Stderr, usageDoc, queryDefaultCmd, dbEnvVar)
 		os.Exit(0)
 	}
 
