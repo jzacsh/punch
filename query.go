@@ -21,7 +21,7 @@ func queryClient(db *sql.DB, client string) error {
 	rows, e := db.Query(`
 		SELECT * FROM punchcard
 		WHERE project IS ?
-		ORDER BY project ASC;
+		ORDER BY punch ASC;
 	`, client)
 	if e != nil {
 		return e
