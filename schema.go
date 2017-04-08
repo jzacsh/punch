@@ -51,3 +51,11 @@ func (from *CardSchema) toSession(to *CardSchema) *Session {
 		NoteStop:  to.Note,
 	}
 }
+
+///////////////////////////////////////////////////////////
+// Not *our* schema, but schema manipulation nonetheless...
+
+func isEmptyTime(t *time.Time) bool {
+	var defaultTime time.Time
+	return t.Sub(defaultTime) == 0
+}

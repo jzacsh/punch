@@ -21,11 +21,6 @@ func scanToCard(rows *sql.Rows) (*CardSchema, error) {
 	return raw.toCard(), nil
 }
 
-func isEmptyTime(t *time.Time) bool {
-	var defaultTime time.Time
-	return t.Sub(defaultTime) == 0
-}
-
 func queryClient(db *sql.DB, client string, from *time.Time) error {
 	var fromStamp int64
 	if !isEmptyTime(from) {
