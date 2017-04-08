@@ -32,7 +32,7 @@ func queryClient(db *sql.DB, client string) error {
 
 	var numSessions int
 	var total time.Duration
-	fmt.Printf("Report on '%s' (in %s):\n", client, time.Now().Format("-0700 MST"))
+	fmt.Printf("Report on '%s' (in %s):\n", client, getTZContext())
 	var punches []*CardSchema
 	numRecords := 0
 	for rows.Next() {
@@ -117,7 +117,7 @@ func queryDump(db *sql.DB) error {
 	}
 	defer rows.Close()
 
-	fmt.Printf("Punch [%s], Status, Project, Note\n", time.Now().Format("-0700 MST"))
+	fmt.Printf("Punch [%s], Status, Project, Note\n", getTZContext())
 	for rows.Next() {
 		punch, e := scanToCard(rows)
 		if e != nil {

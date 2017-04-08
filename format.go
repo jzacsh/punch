@@ -13,6 +13,10 @@ func (s *Session) durationToStr() string {
 
 const durationToStrMaxLen = 20
 
+func getTZContext() string {
+	return time.Now().Format("-0700 MST")
+}
+
 func durationToStr(d time.Duration) string {
 	daysStr := ""
 	days := int(d.Hours()) / 24
