@@ -42,12 +42,12 @@ func queryClient(db *sql.DB, client string) error {
 		}
 
 		numRecords++
-		if numRecords == 1 && !card.Status {
+		if numRecords == 1 && !card.IsStart {
 			fmt.Printf(
 				"  [ERROR: stray punch-out!] at %s (note: '%s')\n",
 				card.Punch.Unix(), fromNote(card.Note))
 			continue
-		} else if !card.Status {
+		} else if !card.IsStart {
 			session := punches[len(punches)-1].toSession(card)
 			numSessions++
 			total += session.Duration
@@ -128,7 +128,7 @@ func queryDump(db *sql.DB) error {
 		fmt.Printf(
 			"%s, %s, %s, %s\n",
 			punch.Punch,
-			fromStatus(punch.Status),
+			fromStatus(punch.IsStart),
 			punch.Project,
 			fromNote(punch.Note))
 	}

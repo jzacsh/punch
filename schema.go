@@ -15,7 +15,7 @@ type CardSchemaRaw struct {
 
 type CardSchema struct {
 	Punch   time.Time
-	Status  bool
+	IsStart bool
 	Project string
 	Note    string
 }
@@ -23,7 +23,7 @@ type CardSchema struct {
 func (raw *CardSchemaRaw) toCard() *CardSchema {
 	return &CardSchema{
 		Punch:   time.Unix(int64(raw.Punch), 0 /*nanoseconds*/),
-		Status:  raw.Status == 1,
+		IsStart: raw.Status == 1,
 		Project: raw.Project,
 		Note:    strings.TrimSpace(raw.Note),
 	}
