@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const dbEnvVar string = "PUNCH_CHARD"
+const dbEnvVar string = "PUNCH_CARD"
 const usageDoc string = `usage:   punch in|out|query
 
 DESCRIPTION
