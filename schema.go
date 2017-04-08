@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type CardSchemaRaw struct {
 	Punch   int // unix stamp seconds; primary key
@@ -21,7 +24,7 @@ func (raw *CardSchemaRaw) toCard() *CardSchema {
 		Punch:   time.Unix(int64(raw.Punch), 0 /*nanoseconds*/),
 		Status:  raw.Status == 1,
 		Project: raw.Project,
-		Note:    raw.Note,
+		Note:    strings.TrimSpace(raw.Note),
 	}
 }
 
