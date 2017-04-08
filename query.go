@@ -6,6 +6,7 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -19,20 +20,36 @@ func scanToCard(rows *sql.Rows) (*CardSchema, error) {
 	return raw.toCard(), nil
 }
 
-func queryClient(db *sql.DB, client string) error {
+func isEmptyTime(t *time.Time) bool {
+	var defaultTime time.Time
+	return t.Sub(defaultTime) == 0
+}
+
+func queryClient(db *sql.DB, client string, from *time.Time) error {
+	var fromStamp int64
+	if !isEmptyTime(from) {
+		fromStamp = from.Unix()
+	}
+
 	rows, e := db.Query(`
 		SELECT * FROM punchcard
 		WHERE project IS ?
+		AND punch > ?
 		ORDER BY punch ASC;
-	`, client)
+	`, client, fromStamp)
 	if e != nil {
 		return e
 	}
 	defer rows.Close()
 
+	var limited string
+	if !isEmptyTime(from) {
+		limited = fmt.Sprintf(" from %s", from.Format(format_dateTime))
+	}
+
 	var numSessions int
 	var total time.Duration
-	fmt.Printf("Report on '%s' (in %s):\n", client, getTZContext())
+	fmt.Printf("Report on '%s' (in %s)%s:\n", client, getTZContext(), limited)
 	var punches []*CardSchema
 	numRecords := 0
 	for rows.Next() {
@@ -83,7 +100,11 @@ func queryClient(db *sql.DB, client string) error {
 	if len(punches) > 2 {
 		fmt.Printf("Summary: Worked %s over %d sessions\n", total, numSessions)
 	} else {
-		fmt.Printf("Warning: no records found for this client string.\n")
+		var fromClause string
+		if !isEmptyTime(from) {
+			fromClause = fmt.Sprintf(" in the past %s", time.Since(*from))
+		}
+		fmt.Printf("Warning: no records found for this client%s.\n", fromClause)
 	}
 
 	return nil
@@ -184,7 +205,15 @@ func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 		if len(args) < 2 || len(args[1]) < 1 {
 			return errors.New("usage error: need client name to report on")
 		}
-		queryClient(db, args[1])
+		var from time.Time
+		if len(args) > 2 {
+			fromStamp, e := strconv.ParseInt(args[2], 10, 64)
+			if e != nil {
+				return errors.New(fmt.Sprintf("parsing FROM_STAMP: %s", e))
+			}
+			from = time.Unix(fromStamp, 0 /*nanoseconds*/)
+		}
+		queryClient(db, args[1], &from)
 	default:
 		return errors.New(fmt.Sprintf(
 			"usage error: unrecognized query cmd, '%s'", args[0]))
