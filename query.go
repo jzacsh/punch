@@ -142,7 +142,7 @@ func queryStatus(db *sql.DB) error {
 	// multiple projects
 	rows, e := db.Query(`
 		SELECT * FROM punchcard
-		ORDER BY punch ASC
+		ORDER BY punch DESC
 		LIMIT 1;
 	`)
 	if e != nil {
