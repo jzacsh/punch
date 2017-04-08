@@ -155,6 +155,9 @@ func queryStatus(db *sql.DB) error {
 		if e != nil {
 			return e
 		}
+		if !punch.IsStart {
+			return nil // was a punch-out; not punched in
+		}
 		fmt.Printf(
 			"%s: %s so far\n",
 			punch.Project,
