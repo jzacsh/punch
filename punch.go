@@ -9,7 +9,7 @@ import (
 )
 
 const dbEnvVar string = "PUNCH_CARD"
-const usageDoc string = `usage:   punch in|out|query
+const usageDoc string = `usage:   punch [in|out|query]
 
 DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
@@ -19,6 +19,8 @@ DESCRIPTION
   $%s environment variable
 
 COMMANDS
+  One of the below sub-commands is expected, otherwise "query status" is assumed.
+
   i|in    CLIENT [NOTE]
     Allows you to punch into work on a "client" or "project" (how exactly you
     classify your work with this time keeping program is irrelevant to the
@@ -43,6 +45,7 @@ COMMANDS
     values will be generated (ordered by punch-date, one-punch per-line).
   - list: Lists all "clients"/"projects" for which records currently exist
   - report CLIENT: Prints a general report on CLIENT provided.
+  - status: prints running-time on any currently punched-into projects.
 `
 
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
@@ -76,7 +79,7 @@ func isDbReadableFile() (string, os.FileInfo, error) {
 // be in their original unix timestamp (rather than time.Unix().String()
 // rendering)
 func main() {
-	if len(os.Args) < 2 ||
+	if len(os.Args) > 1 &&
 		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
 		fmt.Fprintf(os.Stderr, usageDoc, dbEnvVar)
 		os.Exit(1)
@@ -88,6 +91,14 @@ func main() {
 	if e != nil {
 		fmt.Fprintf(os.Stderr, "Error checking database (see -h): %s\n", e)
 		os.Exit(1)
+	}
+
+	if len(os.Args) < 2 {
+		if e := cardQuery(dbInfo, dbPath, []string{queryDefaultCmd}); e != nil {
+			fmt.Fprintf(os.Stderr, "status check: %s\n")
+			os.Exit(1)
+		}
+		return
 	}
 
 	switch os.Args[1] {

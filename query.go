@@ -9,12 +9,35 @@ import (
 	"time"
 )
 
+const queryDefaultCmd string = "status"
+
 func scanToCard(rows *sql.Rows) (*CardSchema, error) {
 	raw := &CardSchemaRaw{}
 	if e := rows.Scan(&raw.Punch, &raw.Status, &raw.Project, &raw.Note); e != nil {
 		return nil, e
 	}
 	return raw.toCard(), nil
+}
+
+func durationToHMS(d time.Duration) (int, int, int) {
+	days := int(d.Hours()) / 24
+	h := int((d - time.Duration(days)*time.Hour*24).Hours()) % 24
+	m := int((d - time.Duration(days)*time.Hour*24 -
+		time.Duration(h)*time.Hour).Minutes())
+	s := int((d - time.Duration(days)*time.Hour*24 -
+		time.Duration(h)*time.Hour -
+		time.Duration(m)*time.Minute).Seconds())
+	return h, m, s
+}
+
+func durationToStr(d time.Duration) string {
+	daysStr := ""
+	days := int(d.Hours()) / 24
+	if days > 0 {
+		daysStr = fmt.Sprintf("%f days ", days)
+	}
+	h, m, s := durationToHMS(d)
+	return fmt.Sprintf("%s%02d:%02d:%02d", daysStr, h, m, s)
 }
 
 func queryClient(db *sql.DB, client string) error {
@@ -133,6 +156,33 @@ func queryDump(db *sql.DB) error {
 	return nil
 }
 
+func queryStatus(db *sql.DB) error {
+	// TODO do JOIN or something to get ONE row PER group (per project); currently
+	// this will erronesouly show only one punched-in status, even if punched into
+	// multiple projects
+	rows, e := db.Query(`
+		SELECT * FROM punchcard
+		ORDER BY punch ASC
+		LIMIT 1;
+	`)
+	if e != nil {
+		return e
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		punch, e := scanToCard(rows)
+		if e != nil {
+			return e
+		}
+		fmt.Printf(
+			"%s: %s so far\n",
+			punch.Project,
+			durationToStr(time.Since(punch.Punch)))
+	}
+	return nil
+}
+
 func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 	db, e := sql.Open("sqlite3", dbPath)
 	if e != nil {
@@ -144,6 +194,8 @@ func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 	}
 
 	switch args[0] {
+	case "status":
+		return queryStatus(db)
 	case "list":
 		return queryClients(db)
 	case "report":
