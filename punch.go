@@ -82,7 +82,7 @@ func main() {
 	if len(os.Args) > 1 &&
 		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
 		fmt.Fprintf(os.Stderr, usageDoc, dbEnvVar, queryDefaultCmd)
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	// TODO(zacsh) graceful first-time creation, eg:
