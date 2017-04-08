@@ -9,7 +9,11 @@ import (
 )
 
 const dbEnvVar string = "PUNCH_CARD"
-const usageDoc string = `usage:   punch [in|out|query]
+const usageDoc string = `NAME
+  punch - log & report hours worked on any project
+
+SYNOPSIS
+  punch [in|out|query]
 
 DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
