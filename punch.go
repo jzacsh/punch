@@ -7,13 +7,15 @@ import (
 	"strings"
 )
 
-var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
-
+const dbEnvVar string = "PUNCH_CHARD"
 const usageDoc string = `usage:   punch in|out|query
 
 DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
   for some obvious stats & reporting you might want.
+
+  Work clock is an SQLite3 database file, path to which is expected to be in
+  $%s environment variable
 
 COMMANDS
   i|in    CLIENT [NOTE]
@@ -37,6 +39,8 @@ COMMANDS
     Allows you to query your work activity.
 `
 
+var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
+
 func failNotYetImplemented(whatFailed string) {
 	fmt.Fprintf(
 		os.Stderr, "nothing implemented yet (not even '%s' subcommand)\n",
@@ -47,7 +51,7 @@ func failNotYetImplemented(whatFailed string) {
 func main() {
 	if len(os.Args) < 2 ||
 		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
-		fmt.Fprintf(os.Stderr, usageDoc)
+		fmt.Fprintf(os.Stderr, usageDoc, dbEnvVar)
 		os.Exit(1)
 	}
 
