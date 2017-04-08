@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -48,10 +49,33 @@ func failNotYetImplemented(whatFailed string) {
 	os.Exit(99)
 }
 
+func isDbReadableFile() error {
+	path := os.Getenv(dbEnvVar)
+	if len(path) == 0 {
+		return errors.New(fmt.Sprintf("$%s is not set", dbEnvVar))
+	}
+
+	f, e := os.Stat(path)
+	if e != nil {
+		return errors.New(fmt.Sprintf(
+			"$%s could not be read; tried, '%s'", dbEnvVar, path))
+	}
+
+	if f.IsDir() {
+		return errors.New(fmt.Sprintf("$%s must be a regular file", dbEnvVar))
+	}
+	return nil
+}
+
 func main() {
 	if len(os.Args) < 2 ||
 		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
 		fmt.Fprintf(os.Stderr, usageDoc, dbEnvVar)
+		os.Exit(1)
+	}
+
+	if e := isDbReadableFile(); e != nil {
+		fmt.Fprintf(os.Stderr, "Error checking database (see -h): %s\n", e)
 		os.Exit(1)
 	}
 
