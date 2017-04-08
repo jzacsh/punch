@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const usageDoc string = `usage: punch in|out|query
+const usageDoc string = `usage:   punch in|out|query
 
 DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
@@ -21,7 +21,7 @@ COMMANDS
     on the record about this work period. (Eg: "trying to finish design doc v3").
 
 
-  o|out   [CLIENT] [-n NOTE]
+  o|out    [CLIENT] [-n NOTE]
     Allows you to punch out of work on which ever
   - CLIENT: Required if you're currently clocked into multiple clients (Eg: if
     perhaps you're using "clients" to mean "projects"). Defaults to the
