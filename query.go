@@ -203,6 +203,9 @@ func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 			return errors.New("usage error: need client name to report on")
 		}
 		queryClient(db, args[1])
+	default:
+		return errors.New(fmt.Sprintf(
+			"usage error: unrecognized query cmd, '%s'", args[0]))
 	}
 
 	return nil
