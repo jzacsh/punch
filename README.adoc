@@ -1,0 +1,4 @@
+= `Punch` in Golang
+
+See original punch implementation here:
+  https://github.com/jzacsh/punch/tree/a1e40862a7
