@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 )
+
+var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
 
 const usageDoc string = `usage:   punch in|out|query
 
@@ -34,6 +38,9 @@ COMMANDS
 `
 
 func main() {
-	fmt.Fprintf(os.Stderr, usageDoc)
-	os.Exit(1)
+	if len(os.Args) < 2 ||
+		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
+		fmt.Fprintf(os.Stderr, usageDoc)
+		os.Exit(1)
+	}
 }
