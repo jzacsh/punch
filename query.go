@@ -124,7 +124,7 @@ func queryDump(db *sql.DB) error {
 			return e
 		}
 		fmt.Printf(
-			"%s, %s, %s, %s\n",
+			"%s, %3s, %s, %s\n",
 			punch.Punch.Format("2006.01.02 15:04:05"),
 			fromStatus(punch.IsStart),
 			punch.Project,
