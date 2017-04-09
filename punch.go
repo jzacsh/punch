@@ -109,8 +109,10 @@ func main() {
 
 	switch os.Args[1] {
 	case "p", "punch":
-		fmt.Fprintf(os.Stderr, "p[unch] subcommand not implemented)\n")
-		os.Exit(99)
+		if e := processPunch(dbPath, os.Args[2:]); e != nil {
+			fmt.Fprintf(os.Stderr, "punch failed: %s\n", e)
+			os.Exit(1)
+		}
 	case "q", "query":
 		if e := cardQuery(dbInfo, dbPath, os.Args[2:]); e != nil {
 			fmt.Fprintf(os.Stderr, "query failed: %s\n", e)

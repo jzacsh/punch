@@ -35,5 +35,3 @@ completion] is:
 
 .TODO
 . *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
-. `punch in` subcommand
-. `punch out` subcommand

@@ -19,6 +19,19 @@ type CardSchema struct {
 	Note    string
 }
 
+func buildCardSQL(isPunchIn bool, client string, note string) *CardSchemaSQL {
+	punchAsInt := 0
+	if isPunchIn {
+		punchAsInt = 1
+	}
+	return &CardSchemaSQL{
+		Punch:   int(time.Now().Unix()),
+		Status:  punchAsInt,
+		Project: client,
+		Note:    note,
+	}
+}
+
 var emptyCard CardSchema
 
 func (c *CardSchema) isEmptyCard() bool {
