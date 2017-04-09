@@ -203,32 +203,33 @@ func queryDump(db *sql.DB) error {
 }
 
 func queryStatus(db *sql.DB) error {
-	// TODO do JOIN or something to get ONE row PER group (per project); currently
-	// this will erronesouly show only one punched-in status, even if punched into
-	// multiple projects
 	rows, e := db.Query(`
 		SELECT * FROM punchcard
-		ORDER BY punch DESC
-		LIMIT 1;
+		GROUP BY project
+		ORDER BY punch DESC;
 	`)
 	if e != nil {
 		return e
 	}
 	defer rows.Close()
 
+	isOnClock := false
 	for rows.Next() {
 		punch, e := scanToCard(rows)
 		if e != nil {
 			return e
 		}
 		if punch.IsStart {
+			isOnClock = true
 			fmt.Printf(
 				"%s: %s so far\n",
 				punch.Project,
 				durationToStr(time.Since(punch.Punch)))
-		} else {
-			fmt.Fprintf(os.Stderr, "Not on the clock.\n")
 		}
+	}
+
+	if !isOnClock {
+		fmt.Fprintf(os.Stderr, "Not on the clock.\n")
 	}
 	return nil
 }
