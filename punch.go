@@ -91,7 +91,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	// TODO(zacsh) graceful first-time creation, eg:
+	// TODO(zacsh) finish create.go for graceful first-time creation, eg:
 	//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
 	dbPath, dbInfo, e := isDbReadableFile()
 	if e != nil {
