@@ -9,7 +9,7 @@ type CardSchemaSQL struct {
 	Punch   int // unix stamp seconds; primary key
 	Status  int // (pseudo-boolean) 1,0
 	Project string
-	Note    string
+	Note    string // optional
 }
 
 type CardSchema struct {
@@ -20,6 +20,10 @@ type CardSchema struct {
 }
 
 func buildCardSQL(isPunchIn bool, client string, note string) *CardSchemaSQL {
+	if len(client) < 1 {
+		panic("tried to build CardSchemaSQL object without required Project field")
+	}
+
 	punchAsInt := 0
 	if isPunchIn {
 		punchAsInt = 1
