@@ -29,9 +29,10 @@ Intentions: I'm currently writing this for fun on spring break, because I miss
 writing code. No idea if I have any plans to ever finish this.
 
 
-As of git tag `v0.subcmd.query` the `report` subcommand is basically complete.
-Still remaining, to reach the {punchsh}[shell implementation's level of
-completion] is:
+As of git tag `v0.complete` the `query` and `punch` subcommands are basically
+complete, giving this implementation min-viable feature parity with with the
+original {punchsh}[shell implementation's level of completion] (the remaining
+features, of which, should probably be ripped out anyway). Still, yet to do:
 
 .TODO
 . *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
