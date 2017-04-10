@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 )
 
@@ -56,4 +57,13 @@ func fromNote(note string) string {
 		return "n/a"
 	}
 	return note
+}
+
+func isValidClient(clientStr string) bool {
+	if len(clientStr) < 1 {
+		return false
+	}
+
+	isAlphaNumeric := regexp.MustCompile("^([[:alpha:]]|[[:digit:]])+$")
+	return isAlphaNumeric.MatchString(clientStr)
 }

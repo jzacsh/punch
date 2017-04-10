@@ -5,6 +5,29 @@ import (
 	"time"
 )
 
+type BillSchemaSQL struct {
+	Endclusive   int // primary key
+	Startclusive int
+	Project      string
+	Note         string //optional
+}
+
+func (b *BillSchemaSQL) toBill() *BillSchema {
+	return &BillSchema{
+		Endclusive:   time.Unix(int64(b.Endclusive), 0 /*nanoseconds*/),
+		Startclusive: time.Unix(int64(b.Startclusive), 0 /*nanoseconds*/),
+		Project:      b.Project,
+		Note:         b.Note,
+	}
+}
+
+type BillSchema struct {
+	Endclusive   time.Time
+	Startclusive time.Time
+	Project      string
+	Note         string //optional
+}
+
 type CardSchemaSQL struct {
 	Punch   int // unix stamp seconds; primary key
 	Status  int // (pseudo-boolean) 1,0

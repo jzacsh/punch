@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,15 @@ func scanToCard(rows *sql.Rows) (*CardSchema, error) {
 		return nil, e
 	}
 	return raw.toCard(), nil
+}
+
+func scanToBill(rows *sql.Rows) (*BillSchema, error) {
+	raw := &BillSchemaSQL{}
+	e := rows.Scan(&raw.Endclusive, &raw.Startclusive, &raw.Project, &raw.Note)
+	if e != nil {
+		return nil, e
+	}
+	return raw.toBill(), nil
 }
 
 func queryClient(db *sql.DB, client string, from *time.Time) error {
@@ -234,6 +244,56 @@ func queryStatus(db *sql.DB) error {
 	return nil
 }
 
+// TODO figure out how to pass entire `clients` array as-is into var-args
+// db.Exec(), instead of manually building a query string with our own
+// injection-checking
+func hack_queryPaychecksIn(db *sql.DB, clients []string) (*sql.Rows, error) {
+	query := "SELECT * FROM paychecks\n"
+	if len(clients) > 0 {
+		for i, c := range clients {
+			if !isValidClient(c) {
+				return nil, errors.New(fmt.Sprintf("invalid client: '%s'", c))
+			}
+			clients[i] = strings.TrimSpace(c)
+		}
+		query += fmt.Sprintf(
+			"WHERE project IN ('%s')\n", strings.Join(clients, "', '"))
+	}
+	query += "ORDER BY endclusive ASC;"
+
+	return db.Query(query)
+}
+
+func queryBills(db *sql.DB, clients []string) error {
+	// TODO(zacsh) make this a JOIN and fetch all the punches within a
+	// {end,start}clusive, and include amount of time worked in this report
+
+	rows, e := hack_queryPaychecksIn(db, clients)
+	if e != nil {
+		return e
+	}
+	defer rows.Close()
+
+	foundPayPeriod := false
+	fmt.Printf("Billed, From (%s), To, Note\n", getTZContext())
+	for rows.Next() {
+		b, e := scanToBill(rows)
+		if e != nil {
+			return e
+		}
+		foundPayPeriod = true
+		fmt.Printf("%s, %s, %s, %s\n",
+			b.Project,
+			b.Startclusive,
+			b.Endclusive,
+			fromNote(b.Note))
+	}
+	if !foundPayPeriod {
+		fmt.Printf("No pay-periods closed, yet.\n")
+	}
+	return nil
+}
+
 // Subcommand "query" driver; has it own subcommands `args` which drive its
 // response
 func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
@@ -248,6 +308,12 @@ func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 	}
 
 	switch args[0] {
+	case "bill", "bills":
+		var clients []string
+		if len(args) > 1 {
+			clients = args[1:]
+		}
+		return queryBills(db, clients)
 	case "status":
 		return queryStatus(db)
 	case "list":

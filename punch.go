@@ -47,6 +47,9 @@ COMMANDS
     back to fetch records. To produce a valid FROM_STAMP, GNU's DATE(1) provides
     an excellent parser, eg: 'date --date=yesterday', 'date --date="8pm next Fri"'.
   - status: prints running-time on any currently punched-into projects.
+  - bills [CLIENT ...]: prints report of payperiod under all CLIENT names.
+    If CLIENT is not provided, prints report consecutively for each CLIENT
+    returned by "query list"
 
 ENVIRONMENT
   Work clock is an SQLite3 database file, path to which is expected to be in
