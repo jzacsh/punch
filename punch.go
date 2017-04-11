@@ -23,7 +23,8 @@ COMMANDS
   One of the below sub-commands is expected, otherwise "query %s" is assumed.
 
   p|punch    [CLIENT] [-n NOTE]
-    Allows punching in and out of work on a "client" or "project" indiciated by CLIENT.
+    Allows punching in & out of work on a "client"/"project" indiciated by a
+    CLIENT string (an alphanumeric string of characters).
 
     There are two uses for this command:
     - 1) starting work: "punching in" to start the clock for some project or client
@@ -42,10 +43,11 @@ COMMANDS
     below. If no QUERY is provided, a dump of the database as comma-separated
     values will be generated (ordered by punch-date, one-punch per-line).
   - list: Lists all "clients"/"projects" for which records currently exist
-  - report CLIENT [FROM_STAMP]: Prints a general report on the CLIENT provided. If a
-    unix timestamp FROM_STAMP (in seconds) is specified, it's used as furthest boundary
-    back to fetch records. To produce a valid FROM_STAMP, GNU's DATE(1) provides
-    an excellent parser, eg: 'date --date=yesterday', 'date --date="8pm next Fri"'.
+  - report CLIENT [FROM_STAMP]: Prints a general report on the CLIENT provided.
+    If a unix timestamp FROM_STAMP (in seconds) is specified, it's used as
+    furthest boundary back to fetch records. To produce a valid FROM_STAMP,
+    GNU's DATE(1) provides an excellent parser, eg: 'date --date=yesterday',
+    'date --date="8pm next Fri"'.
   - status: prints running-time on any currently punched-into projects.
   - bills [CLIENT ...]: prints report of payperiod under all CLIENT names.
     If CLIENT is not provided, prints report consecutively for each CLIENT
