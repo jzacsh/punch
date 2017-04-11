@@ -1,150 +1,162 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
-	"os"
-	"regexp"
+	_ "github.com/mattn/go-sqlite3"
 	"strings"
 )
 
-const dbEnvVar string = "PUNCH_CARD"
-const usageDoc string = `NAME
-  punch - logs & reports time worked on any project
+func parseArgs(args []string) (string, string, error) {
+	if len(args) == 0 {
+		return "", "", nil
+	}
+	var client, note, noteRaw string
+	clientOrFlag := strings.TrimSpace(args[0])
+	if len(args) == 1 {
+		if clientOrFlag == "-n" {
+			return "", "", errors.New(fmt.Sprintf(
+				"expected CLIENT, -n NOTE, or CLIENT -n NOTE, but got just -n"))
+		}
 
-SYNOPSIS
-  punch [punch|bill|query]
+		client = clientOrFlag
+		if len(client) == 0 {
+			return "", "", errors.New(fmt.Sprintf(
+				"CLIENT must be non-empty (or -n provided), but got '%s'", args[0]))
+		}
+		return client, note, nil
+	} else {
+		flagOrNoteChunk := strings.TrimSpace(args[1])
+		if clientOrFlag == "-n" {
+			noteRaw = strings.Join(args[1:], " ")
+		} else {
+			client = clientOrFlag
+			noteRaw = strings.Join(args[2:], " ")
 
-DESCRIPTION
-  Manages your work clock, allowing you to "punch in" or "punch out" and query
-  for some obvious stats & reporting you might want.
-
-COMMANDS
-  One of the below sub-commands is expected, otherwise "query %s" is assumed.
-
-  p|punch    [CLIENT] [-n NOTE]
-    Allows punching in & out of work on a "client"/"project" indiciated by a
-    CLIENT string (an alphanumeric string of characters).
-
-    There are two uses for this command:
-    - 1) starting work: "punching in" to start the clock for some project or client
-    - 2) stopping work: "punching out" to stop the clock for some project or client
-    In both cases CLIENT indicates which client/project to starting/stopping work on.
-
-    If CLIENT Is not provided, it's assumed you're trying to implicitly punch
-    out. If you're not punched into exactly one CLIENT already, then no-arg punching
-    will have no safe assumptions to make, and the command will fail.
-
-    Optionally, passing -n NOTE indicates that NOTE string should be stored for
-    future reference for this punchcard entry.
-
-  bill CLIENT FROM TO [-n NOTE]
-    Maintains durations of time over which a payperiod occurs, from the FROM
-    unix timestamp, to the TO unix timestamp, both inclusive. See DATE(1) under
-    EXAMPLES for more on timestamps.
-
-    NOTE: data on billing is not in anyway related to the data kept on punches.
-    When "query bills" reports time worked over a pay period, it merely
-    correlates overlaps in duration indicated by the payperiod with any
-    durations logged through punches.
-
-  q|query    [QUERY...]
-    Allows you to query your work activity, where QUERY is any one of the
-    below. If no QUERY is provided, a dump of the database as comma-separated
-    values will be generated (ordered by punch-date, one-punch per-line).
-  - list: Lists all "clients"/"projects" for which records currently exist
-  - report CLIENT [FROM_STAMP]: Prints a general report on the CLIENT provided.
-    If a unix timestamp FROM_STAMP (in seconds) is specified, it's used as
-    furthest boundary back to fetch records. See DATE(1) under EXAMPLES for more
-    on timestamps.
-  - status: prints running-time on any currently punched-into projects.
-  - bills [CLIENT ...]: prints report of payperiod under all CLIENT names.
-    If CLIENT is not provided, prints report consecutively for each CLIENT
-    returned by "query list"
-
-ENVIRONMENT
-  Work clock is an SQLite3 database file, path to which is expected to be in
-  $%s environment variable.
-
-EXAMPLES:
-  Common 'punch' command lines:
-   $ punch # same as "punch query %s"
-   ch: 99:01 so far
-   $ punch p -n 'phew, finished proving hypothesis'
-   $ punch
-   Not on the clock.
-   $ punch p puzzles -n 'free time to tackle tetris in Brainfuck'
-
-  Unix timestamps can be easily obtained. Passing '+%s' to GNU's DATE(1)
-  utilizes its excellent parser output to produce valid unix timestamps:
-   $ date    # Tue Apr 11 08:58:26 EDT 2017
-   $ date     --date=yesterday
-   Mon Apr 10 08:58:23 EDT 2017
-   $ date     --date="8pm next Fri"
-   Fri Apr 14 20:00:00 EDT 2017
-   $ date +%s --date="8pm next Fri"
-`
-
-var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
-
-func isDbReadableFile() (string, os.FileInfo, error) {
-	p := os.Getenv(dbEnvVar)
-	if len(p) == 0 {
-		return "", nil, errors.New(fmt.Sprintf("$%s is not set", dbEnvVar))
+			if flagOrNoteChunk != "-n" {
+				return "", "", errors.New(fmt.Sprintf(
+					"expected CLIENT [-n NOTE], but got CLIENT='%s' followed by, '%s'",
+					clientOrFlag, noteRaw))
+			}
+		}
 	}
 
-	f, e := os.Stat(p)
-	if e != nil {
-		return p, f, errors.New(fmt.Sprintf(
-			"$%s could not be read; tried, '%s'", dbEnvVar, p))
+	note = strings.TrimSpace(noteRaw)
+	if len(note) < 1 {
+		return "", "", errors.New(fmt.Sprintf(
+			"expected -n NOTE but '-n %s'",
+			noteRaw))
 	}
 
-	if f.IsDir() {
-		return "", f, errors.New(fmt.Sprintf("$%s must be a regular file", dbEnvVar))
-	}
-	return p, f, nil
+	return client, note, nil
 }
 
-// TODO(zacsh) allow for global flag to indicate punch in/out renderings should
-// be in their original unix timestamp (rather than time.Unix().String()
-// rendering)
-func main() {
-	if len(os.Args) > 1 &&
-		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
-		fmt.Fprintf(os.Stderr, usageDoc, queryDefaultCmd, dbEnvVar, queryDefaultCmd)
-		os.Exit(0)
-	}
-
-	// TODO(zacsh) finish create.go for graceful first-time creation, eg:
-	//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
-	dbPath, dbInfo, e := isDbReadableFile()
+func getImpliedClient(db *sql.DB) (string, error) {
+	rows, e := db.Query(`
+		SELECT * FROM punchcard
+		GROUP BY project
+		ORDER BY punch DESC;
+	`)
 	if e != nil {
-		fmt.Fprintf(os.Stderr, "Error checking database (see -h): %s\n", e)
-		os.Exit(1)
+		return "", e
+	}
+	defer rows.Close()
+
+	var punchedInto string
+	for rows.Next() {
+		card, e := scanToCard(rows)
+		if e != nil {
+			return "", errors.New(fmt.Sprintf("punch cards: %s", e))
+		}
+
+		if card.IsStart {
+			if len(punchedInto) > 0 {
+				return "", errors.New(fmt.Sprintf(
+					"implying one CLIENT is on clock, but found 2: '%s' & '%s'",
+					punchedInto, card.Project))
+			}
+			punchedInto = card.Project
+		}
 	}
 
-	if len(os.Args) < 2 {
-		if e := cardQuery(dbInfo, dbPath, []string{queryDefaultCmd}); e != nil {
-			fmt.Fprintf(os.Stderr, "status check: %s\n")
-			os.Exit(1)
-		}
-		return
+	if len(punchedInto) == 0 {
+		return "", errors.New("implying one CLIENT is on clock, but none are")
 	}
 
-	switch os.Args[1] {
-	case "p", "punch":
-		if e := processPunch(dbPath, os.Args[2:]); e != nil {
-			fmt.Fprintf(os.Stderr, "punch failed: %s\n", e)
-			os.Exit(1)
-		}
-	case "q", "query":
-		if e := cardQuery(dbInfo, dbPath, os.Args[2:]); e != nil {
-			fmt.Fprintf(os.Stderr, "query failed: %s\n", e)
-			os.Exit(1)
-		}
-	default:
-		fmt.Fprintf(os.Stderr,
-			"valid sub-command required (ie: not '%s'); try --h for usage\n", os.Args[1])
-		os.Exit(1)
+	return punchedInto, nil
+}
+
+func isPunchIn(db *sql.DB, client string, isImplicitPunchOut bool) (bool, error) {
+	if isImplicitPunchOut {
+		return false, nil
 	}
+
+	rows, e := db.Query(`
+		SELECT * FROM punchcard
+		WHERE project IS ?
+		ORDER BY punch DESC
+		LIMIT 1;
+	`, client)
+	if e != nil {
+		return false, e
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		card, e := scanToCard(rows)
+		if e != nil {
+			return false, e
+		}
+		return !card.IsStart, nil
+	}
+	return false, nil
+}
+
+func punchProject(db *sql.DB, card *CardSchemaSQL) error {
+	stmt, e := db.Prepare(`
+		INSERT INTO
+		punchcard(punch, status, project, note)
+		VALUES (?, ?, ?, ?)
+	`)
+	if e != nil {
+		return e
+	}
+
+	// TODO(zacsh) expose result val here via debug flags on cli
+	if _, e := stmt.Exec(card.Punch, card.Status, card.Project, card.Note); e != nil {
+		return e
+	}
+	return nil
+}
+
+func processPunch(dbPath string, args []string) error {
+	explicitClient, note, e := parseArgs(args)
+	if e != nil {
+		return e
+	}
+
+	db, e := sql.Open("sqlite3", dbPath)
+	if e != nil {
+		return errors.New(fmt.Sprintf("punch cards: %s", e))
+	}
+	defer db.Close()
+
+	isImplicitPunchOut := false
+	client := explicitClient
+	if len(client) == 0 {
+		isImplicitPunchOut = true
+		client, e = getImpliedClient(db)
+		if e != nil {
+			return e
+		}
+	}
+
+	isPunchIn, e := isPunchIn(db, client, isImplicitPunchOut)
+	if e != nil {
+		return e
+	}
+
+	sqlCard := buildCardSQL(isPunchIn, client, note)
+	return punchProject(db, sqlCard)
 }
