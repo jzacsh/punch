@@ -87,7 +87,7 @@ EXAMPLES:
    Mon Apr 10 08:58:23 EDT 2017
    $ date     --date="8pm next Fri"
    Fri Apr 14 20:00:00 EDT 2017
-   $ date +%s --date="8pm next Fri"
+   $ date +%%s --date="8pm next Fri"
 `
 
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
