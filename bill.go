@@ -5,42 +5,156 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func parsePayPeriodArgs(args []string) (*BillSchema, error) {
-	if len(args) < 3 {
-		return nil, errors.New(fmt.Sprintf(
-			"expect at least 3, CLIENT FROM TO [-n NOTE], but got %d args", len(args)))
+func getImpliedToStamp(db *sql.DB, client string) (int64, error) {
+	rows, e := db.Query(`
+		SELECT * FROM punchcard
+		WHERE project IS ?
+		ORDER BY punch DESC
+		LIMIT 2;
+	`, client)
+	if e != nil {
+		return 0, e
 	}
+	defer rows.Close()
+
+	for rows.Next() {
+		c, e := scanToCard(rows)
+		if e != nil {
+			return 0, e
+		}
+		if c.IsStart {
+			continue
+		}
+
+		return c.Punch.Unix(), nil
+	}
+
+	return 0, errors.New(fmt.Sprintf(
+		"implied TO stamp, but no full work records found", client))
+}
+
+func getImpliedFromStamp(db *sql.DB, client string) (int64, error) {
+	rows, e := db.Query(`
+		SELECT * FROM paychecks
+		WHERE project IS ?
+		ORDER BY endclusive DESC
+		LIMIT 1;
+	`, client)
+	if e != nil {
+		return 0, e
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		b, e := scanToBill(rows)
+		if e != nil {
+			return 0, e
+		}
+
+		return b.Endclusive.Unix(), nil
+	}
+
+	// If here, then no previous paycheck, so *all* of history is implied
+	// beginning of paycheck...
+
+	rows, e = db.Query(`
+		SELECT * FROM punchcard
+		WHERE project IS ?
+		ORDER BY punch ASC
+		LIMIT 1;
+	`, client)
+	if e != nil {
+		return 0, e
+	}
+	defer rows.Close() // TODO funky to have two rows.Close() deferals?
+
+	for rows.Next() {
+		c, e := scanToCard(rows)
+		if e != nil {
+			return 0, e
+		}
+
+		return c.Punch.Unix(), nil
+	}
+
+	return 0, errors.New(fmt.Sprintf(
+		"implied '%s' FROM impossible without work or payperiod history", client))
+}
+
+func parsePayPeriodArgs(db *sql.DB, args []string) (bool, *BillSchema, error) {
+	isDryRun := false
 
 	client := strings.TrimSpace(args[0])
 	if !isValidClient(client) {
-		return nil, errors.New(fmt.Sprintf("invalid CLIENT: '%s'", client))
+		return isDryRun, nil, errors.New(fmt.Sprintf("invalid CLIENT: '%s'", client))
 	}
 
-	fromStamp, e := strconv.ParseInt(strings.TrimSpace(args[1]), 10, 64)
-	if e != nil {
-		return nil, errors.New(fmt.Sprintf("expected FROM to be int: %s", e))
+	isImpliedFrom := true
+	isImpliedTo := true
+
+	var e error
+	var note string
+	var fromStamp, toStamp int64
+	if len(args) > 1 {
+		for i := 1; i < len(args); i++ {
+			switch args[i] {
+			case "-n":
+				noteStartIdx := i + 1
+				note = strings.TrimSpace(strings.Join(args[noteStartIdx:], " "))
+				if len(note) < 1 {
+					return isDryRun, nil, errors.New("-n passed, but no NOTE found.")
+				}
+				i = len(args) // end for loop
+				break         // TODO necessary in go?
+
+			case "-d":
+				isDryRun = true
+				break // TODO necessary in go?
+
+			case "-f":
+				fromStamp, e = strconv.ParseInt(strings.TrimSpace(args[i+1]), 10, 64)
+				isImpliedFrom = false
+				i++   // skip FROM stamp
+				break // TODO necessary in go?
+
+			case "-t":
+				toStamp, e = strconv.ParseInt(strings.TrimSpace(args[i+1]), 10, 64)
+				isImpliedTo = false
+				i++   // skip TO stamp
+				break // TODO necessary in go?
+
+			default:
+				return isDryRun, nil, errors.New(fmt.Sprintf(
+					"unrecognized commandline at '%s'", args[i:]))
+			}
+		}
 	}
 
-	toStamp, e := strconv.ParseInt(strings.TrimSpace(args[2]), 10, 64)
-	if e != nil {
-		return nil, errors.New(fmt.Sprintf("expected FROM to be int: %s", e))
+	if isImpliedFrom {
+		fromStamp, e = getImpliedFromStamp(db, client)
+		if e != nil {
+			return isDryRun, nil, e
+		}
+	}
+
+	if isImpliedTo {
+		toStamp, e = getImpliedToStamp(db, client)
+		if e != nil {
+			return isDryRun, nil, e
+		}
 	}
 
 	if fromStamp >= toStamp {
-		return nil, errors.New("expected FROM to be younger stamp than TO")
+		return isDryRun, nil, errors.New("expected FROM to be older stamp than TO")
 	}
 
-	var note string
-	if len(args) > 3 {
-		note = strings.TrimSpace(strings.Join(args[3:], " "))
-	}
-
-	return &BillSchema{
+	return isDryRun, &BillSchema{
 		Endclusive:   time.Unix(toStamp, 0 /*nanoseconds*/),
 		Startclusive: time.Unix(fromStamp, 0 /*nanoseconds*/),
 		Project:      client,
@@ -65,16 +179,31 @@ func commitPayPeriod(db *sql.DB, b *BillSchemaSQL) error {
 }
 
 func markPayPeriod(dbPath string, args []string) error {
-	bill, e := parsePayPeriodArgs(args)
-	if e != nil {
-		return errors.New(fmt.Sprintf("parse args: %s", e))
-	}
-
 	db, e := sql.Open("sqlite3", dbPath)
 	if e != nil {
 		return errors.New(fmt.Sprintf("bill sql: %s", e))
 	}
 	defer db.Close()
 
-	return commitPayPeriod(db, bill.toSQL())
+	isDryRun, bill, e := parsePayPeriodArgs(db, args)
+	if e != nil {
+		return errors.New(fmt.Sprintf("parse args: %s", e))
+	}
+
+	if isDryRun {
+		fmt.Fprintf(os.Stderr, `
+    DRY RUN(-d): will create bill for '%s':
+      from '%s'
+      to   '%s'
+    NOTE:
+    %s%s`,
+			bill.Project,
+			bill.Startclusive,
+			bill.Endclusive,
+			bill.Note,
+			"\n")
+		return nil
+	} else {
+		return commitPayPeriod(db, bill.toSQL())
+	}
 }
