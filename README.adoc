@@ -35,4 +35,5 @@ original {punchsh}[shell implementation's level of completion] (the remaining
 features, of which, should probably be ripped out anyway). Still, yet to do:
 
 .TODO
+. *billing* feature; payperiod tracking to show better working-times
 . *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]

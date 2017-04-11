@@ -235,6 +235,8 @@ func queryStatus(db *sql.DB) error {
 				"%s: %s so far\n",
 				punch.Project,
 				durationToStr(time.Since(punch.Punch)))
+			// TODO include *total* since-last-payperiod logged, in parenthesis, eg:
+			// "golangpunch: 0:03 so far (37:14:00 since last bill)"
 		}
 	}
 
