@@ -21,6 +21,15 @@ func (b *BillSchemaSQL) toBill() *BillSchema {
 	}
 }
 
+func (b *BillSchema) toSQL() *BillSchemaSQL {
+	return &BillSchemaSQL{
+		Endclusive:   int(b.Endclusive.Unix()),
+		Startclusive: int(b.Startclusive.Unix()),
+		Project:      b.Project,
+		Note:         b.Note,
+	}
+}
+
 type BillSchema struct {
 	Endclusive   time.Time
 	Startclusive time.Time
