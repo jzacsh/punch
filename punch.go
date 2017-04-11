@@ -13,7 +13,7 @@ const usageDoc string = `NAME
   punch - logs & reports time worked on any project
 
 SYNOPSIS
-  punch [punch|query]
+  punch [punch|bill|query]
 
 DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
@@ -37,6 +37,16 @@ COMMANDS
 
     Optionally, passing -n NOTE indicates that NOTE string should be stored for
     future reference for this punchcard entry.
+
+  bill CLIENT FROM TO [-n NOTE]
+    Maintains durations of time over which a payperiod occurs, from the FROM
+    unix timestamp, to the TO unix timestamp, both inclusive. See DATE(1) under
+    EXAMPLES for more on timestamps.
+
+    NOTE: data on billing is not in anyway related to the data kept on punches.
+    When "query bills" reports time worked over a pay period, it merely
+    correlates overlaps in duration indicated by the payperiod with any
+    durations logged through punches.
 
   q|query    [QUERY...]
     Allows you to query your work activity, where QUERY is any one of the
