@@ -45,9 +45,8 @@ COMMANDS
   - list: Lists all "clients"/"projects" for which records currently exist
   - report CLIENT [FROM_STAMP]: Prints a general report on the CLIENT provided.
     If a unix timestamp FROM_STAMP (in seconds) is specified, it's used as
-    furthest boundary back to fetch records. To produce a valid FROM_STAMP,
-    GNU's DATE(1) provides an excellent parser, eg: 'date --date=yesterday',
-    'date --date="8pm next Fri"'.
+    furthest boundary back to fetch records. See DATE(1) under EXAMPLES for more
+    on timestamps.
   - status: prints running-time on any currently punched-into projects.
   - bills [CLIENT ...]: prints report of payperiod under all CLIENT names.
     If CLIENT is not provided, prints report consecutively for each CLIENT
@@ -58,12 +57,22 @@ ENVIRONMENT
   $%s environment variable.
 
 EXAMPLES:
-  $ punch # same as "punch query %s"
-  ch: 99:01 so far
-  $ punch p -n 'phew, finished proving hypothesis'
-  $ punch
-  Not on the clock.
-  $ punch p puzzles -n 'free time to tackle tetris in Brainfuck'
+  Common 'punch' command lines:
+   $ punch # same as "punch query %s"
+   ch: 99:01 so far
+   $ punch p -n 'phew, finished proving hypothesis'
+   $ punch
+   Not on the clock.
+   $ punch p puzzles -n 'free time to tackle tetris in Brainfuck'
+
+  Unix timestamps can be easily obtained. Passing '+%s' to GNU's DATE(1)
+  utilizes its excellent parser output to produce valid unix timestamps:
+   $ date    # Tue Apr 11 08:58:26 EDT 2017
+   $ date     --date=yesterday
+   Mon Apr 10 08:58:23 EDT 2017
+   $ date     --date="8pm next Fri"
+   Fri Apr 14 20:00:00 EDT 2017
+   $ date +%s --date="8pm next Fri"
 `
 
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
