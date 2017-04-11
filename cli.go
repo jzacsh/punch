@@ -63,7 +63,7 @@ COMMANDS
     returned by "query list"
 
 ENVIRONMENT
-  Work clock is an SQLite3 database file, path to which is expected to be in
+  Work clock is an SQLite3 database file path, at which is expected to be in
   $%s environment variable.
 
 EXAMPLES:
