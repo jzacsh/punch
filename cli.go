@@ -88,6 +88,7 @@ EXAMPLES:
    $ date     --date="8pm next Fri"
    Fri Apr 14 20:00:00 EDT 2017
    $ date +%%s --date="8pm next Fri"
+   1492214400 # perfect unix timestamp in seconds
 `
 
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
