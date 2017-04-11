@@ -38,12 +38,12 @@ COMMANDS
     Optionally, passing -n NOTE indicates that NOTE string should be stored for
     future reference for this punchcard entry.
 
-  bill CLIENT FROM TO [-n NOTE]
+  bill CLIENT FROM TO [NOTE]
     Maintains durations of time over which a payperiod occurs, from the FROM
     unix timestamp, to the TO unix timestamp, both inclusive. See DATE(1) under
     EXAMPLES for more on timestamps.
 
-    NOTE: data on billing is not in anyway related to the data kept on punches.
+    Note: data on billing is not in anyway related to the data kept on punches.
     When "query bills" reports time worked over a pay period, it merely
     correlates overlaps in duration indicated by the payperiod with any
     durations logged through punches.
