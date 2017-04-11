@@ -267,6 +267,12 @@ func hack_queryPaychecksIn(db *sql.DB, clients []string) (*sql.Rows, error) {
 func queryBills(db *sql.DB, clients []string) error {
 	// TODO(zacsh) make this a JOIN and fetch all the punches within a
 	// {end,start}clusive, and include amount of time worked in this report
+	//   SELECT *
+	//   FROM paychecks as p
+	//   JOIN punchcard as c
+	//   ON p.project=c.project
+	//   AND p.startclusive < c.punch
+	//   AND p.endclusive > c.punch;
 
 	rows, e := hack_queryPaychecksIn(db, clients)
 	if e != nil {
