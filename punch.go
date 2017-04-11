@@ -13,7 +13,7 @@ const usageDoc string = `NAME
   punch - logs & reports time worked on any project
 
 SYNOPSIS
-  punch [in|out|query]
+  punch [punch|query]
 
 DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
