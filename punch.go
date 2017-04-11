@@ -123,11 +123,10 @@ func punchProject(db *sql.DB, card *CardSchemaSQL) error {
 		return e
 	}
 
+	_, e = stmt.Exec(card.Punch, card.Status, card.Project, card.Note)
 	// TODO(zacsh) expose result val here via debug flags on cli
-	if _, e := stmt.Exec(card.Punch, card.Status, card.Project, card.Note); e != nil {
-		return e
-	}
-	return nil
+
+	return e
 }
 
 func processPunch(dbPath string, args []string) error {

@@ -59,10 +59,9 @@ func commitPayPeriod(db *sql.DB, b *BillSchemaSQL) error {
 	}
 
 	// TODO(zacsh) expose result val here via debug flags on cli
-	if _, e := stmt.Exec(b.Endclusive, b.Startclusive, b.Project, b.Note); e != nil {
-		return e
-	}
-	return nil
+	_, e = stmt.Exec(b.Endclusive, b.Startclusive, b.Project, b.Note)
+
+	return e
 }
 
 func markPayPeriod(dbPath string, args []string) error {
