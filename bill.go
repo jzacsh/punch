@@ -72,7 +72,7 @@ func markPayPeriod(dbPath string, args []string) error {
 
 	db, e := sql.Open("sqlite3", dbPath)
 	if e != nil {
-		return errors.New(fmt.Sprintf("bil sql: %s", e))
+		return errors.New(fmt.Sprintf("bill sql: %s", e))
 	}
 	defer db.Close()
 
