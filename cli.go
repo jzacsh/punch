@@ -10,6 +10,7 @@ import (
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
 var helpLongRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help)(\b|$)")
 
+// Guarantees env. var value WILL return, even on error not nil
 func isDbReadableFile() (string, os.FileInfo, error) {
 	p := os.Getenv(dbEnvVar)
 	if len(p) == 0 {
@@ -62,16 +63,22 @@ func main() {
 		maybeHandleHelpCli()
 	}
 
+	isCmdDefault := len(os.Args) < 2
 
-	// TODO(zacsh) finish create.go for graceful first-time creation, eg:
-	//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
 	dbPath, dbInfo, e := isDbReadableFile()
 	if e != nil {
-		fmt.Fprintf(os.Stderr, "Error checking database (see -h): %s\n", e)
-		os.Exit(1)
+		if isCmdDefault && len(dbPath) > 0 {
+			// TODO(zacsh) finish create.go for graceful first-time creation, eg:
+			//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
+			fmt.Fprintf(os.Stderr, "auto-creation of db not yet implemented\n")
+			os.Exit(1)
+		} else {
+			fmt.Fprintf(os.Stderr, "Error checking database (see -h): %s\n", e)
+			os.Exit(1)
+		}
 	}
 
-	if len(os.Args) < 2 {
+	if isCmdDefault {
 		if e := cardQuery(dbInfo, dbPath, []string{queryDefaultCmd}); e != nil {
 			fmt.Fprintf(os.Stderr, "status check: %s\n")
 			os.Exit(1)
