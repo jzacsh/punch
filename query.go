@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-const queryDefaultCmd string = "status"
-
 func scanToCard(rows *sql.Rows) (*CardSchema, error) {
 	raw := &CardSchemaSQL{}
 	if e := rows.Scan(&raw.Punch, &raw.Status, &raw.Project, &raw.Note); e != nil {
