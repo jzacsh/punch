@@ -8,6 +8,7 @@ import (
 )
 
 var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
+var helpLongRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help)(\b|$)")
 
 func isDbReadableFile() (string, os.FileInfo, error) {
 	p := os.Getenv(dbEnvVar)
@@ -31,9 +32,13 @@ func isDbReadableFile() (string, os.FileInfo, error) {
 // be in their original unix timestamp (rather than time.Unix().String()
 // rendering)
 func main() {
-	if len(os.Args) > 1 &&
-		helpRegexp.MatchString(strings.Replace(os.Args[1], "-", "", -1)) {
-		fmt.Fprint(os.Stderr, helpManual())
+	firstArgChars := strings.Replace(os.Args[1], "-", "", -1)
+	if len(os.Args) > 1 && helpRegexp.MatchString(firstArgChars) {
+		helpDoc := helpCli()
+		if helpLongRegexp.MatchString(firstArgChars) {
+			helpDoc = helpManual()
+		}
+		fmt.Fprint(os.Stderr, helpDoc)
 		os.Exit(0)
 	}
 

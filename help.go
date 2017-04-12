@@ -6,26 +6,27 @@ const dbEnvVar string = "PUNCH_CARD"
 
 const queryDefaultCmd string = "status"
 
+const helpCliPattern string = "punch [punch|bill|query]"
+const helpDoesWhat string = "logs & reports time worked on any project"
+
 // Name, synopsis, description
 func helpSectionHeader() string {
 	return fmt.Sprintf(`NAME
-  punch - logs & reports time worked on any project
+  punch - %s
 
 SYNOPSIS
-  punch [punch|bill|query]
+  %s
 
 DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
   for some obvious stats & reporting you might want.
-`)
+`, helpDoesWhat, helpCliPattern)
 }
 
-// Subcommands
-func helpSectionCommands() string {
-	return fmt.Sprintf(`COMMANDS
-  One of the below sub-commands is expected, otherwise "query %s" is assumed.
-
-  p|punch    [CLIENT] [-n NOTE]
+func helpCmdPunch(cliOnly bool) string {
+	var punchHelp string
+	if !cliOnly {
+		punchHelp = `
     Allows punching in & out of work on a "client"/"project" indiciated by a
     CLIENT string (an alphanumeric string of characters).
 
@@ -39,9 +40,15 @@ func helpSectionCommands() string {
     will have no safe assumptions to make, and the command will fail.
 
     Optionally, passing -n NOTE indicates that NOTE string should be stored for
-    future reference for this punchcard entry.
+    future reference for this punchcard entry.`
+	}
+	return fmt.Sprintf("  p|punch    [CLIENT] [-n NOTE]\n%s\n", punchHelp)
+}
 
-  bill CLIENT [-d] [-f FROM] [-t TO] [-n NOTE]
+func helpCmdBill(cliOnly bool) string {
+	var billHelp string
+	if !cliOnly {
+		billHelp = `
     Records durations of time over which a payperiod occurs. To see its impact,
     as a dry run, pass -d. Duration of the pay period is defined to be the
     inclusive span between the unix time stamps FROM and TO.
@@ -61,9 +68,15 @@ func helpSectionCommands() string {
     Note: data on billing is not in anyway related to the data kept on punches.
     When "query bills" reports time worked over a pay period, it merely
     correlates overlaps in duration indicated by the payperiod with any
-    durations logged through punches.
+    durations logged through punches.`
+	}
+	return fmt.Sprintf("  bill CLIENT [-d] [-f FROM] [-t TO] [-n NOTE]\n%s\n", billHelp)
+}
 
-  q|query    [QUERY...]
+func helpCmdQuery(cliOnly bool) string {
+	var queryHelp string
+	if !cliOnly {
+		queryHelp = `
     Allows you to query your work activity, where QUERY is any one of the
     below. If no QUERY is provided, a dump of the database as comma-separated
     values will be generated (ordered by punch-date, one-punch per-line).
@@ -75,8 +88,22 @@ func helpSectionCommands() string {
   - status: prints running-time on any currently punched-into projects.
   - bills [CLIENT ...]: prints report of payperiod under all CLIENT names.
     If CLIENT is not provided, prints report consecutively for each CLIENT
-    returned by "query list"
-`, queryDefaultCmd)
+    returned by "query list"`
+	}
+	return fmt.Sprintf("  q|query    [QUERY...]\n%s\n", queryHelp)
+}
+
+// Subcommands
+func helpSectionCommands() string {
+	return fmt.Sprintf(`COMMANDS
+  One of the below sub-commands is expected, otherwise "query %s" is assumed.
+
+%s
+%s
+%s`, queryDefaultCmd,
+		helpCmdPunch(false /*cliOnly*/),
+		helpCmdBill(false /*cliOnly*/),
+		helpCmdQuery(false /*cliOnly*/))
 }
 
 // Environment & Examples
@@ -116,5 +143,10 @@ func helpManual() string {
 
 // the tl;dr version of helpManual
 func helpCli() string {
-	return "" // TODO build short version, and call for any of: `h`, `-h`, `--h`
+	return fmt.Sprintf("usage: %s\n  %s\n\n%s%s%sSee --help for more\n",
+		helpCliPattern,
+		helpDoesWhat,
+		helpCmdPunch(true /*cliOnly*/),
+		helpCmdBill(true /*cliOnly*/),
+		helpCmdQuery(true /*cliOnly*/))
 }
