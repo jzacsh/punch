@@ -35,8 +35,8 @@ func getImpliedToStamp(db *sql.DB, client string) (int64, error) {
 		return c.Punch.Unix(), nil
 	}
 
-	return 0, errors.New(fmt.Sprintf(
-		"implied TO stamp, but no full work records found", client))
+	return 0, fmt.Errorf(
+		"implied TO stamp, but no full work records found", client)
 }
 
 func getImpliedFromStamp(db *sql.DB, client string) (int64, error) {
@@ -83,8 +83,8 @@ func getImpliedFromStamp(db *sql.DB, client string) (int64, error) {
 		return c.Punch.Unix(), nil
 	}
 
-	return 0, errors.New(fmt.Sprintf(
-		"implied '%s' FROM impossible without work or payperiod history", client))
+	return 0, fmt.Errorf(
+		"implied '%s' FROM impossible without work or payperiod history", client)
 }
 
 func parsePayPeriodArgs(db *sql.DB, args []string) (bool, *BillSchema, error) {
@@ -92,7 +92,7 @@ func parsePayPeriodArgs(db *sql.DB, args []string) (bool, *BillSchema, error) {
 
 	client := strings.TrimSpace(args[0])
 	if !isValidClient(client) {
-		return isDryRun, nil, errors.New(fmt.Sprintf("invalid CLIENT: '%s'", client))
+		return isDryRun, nil, fmt.Errorf("invalid CLIENT: '%s'", client)
 	}
 
 	isImpliedFrom := true
@@ -118,8 +118,8 @@ func parsePayPeriodArgs(db *sql.DB, args []string) (bool, *BillSchema, error) {
 			case "-f":
 				fromStamp, e = strconv.ParseInt(strings.TrimSpace(args[i+1]), 10, 64)
 				if e != nil {
-					return isDryRun, nil, errors.New(fmt.Sprintf(
-						"bad FROM timestamp, '%s'", args[i+1]))
+					return isDryRun, nil, fmt.Errorf(
+						"bad FROM timestamp, '%s'", args[i+1])
 				}
 				isImpliedFrom = false
 				i++ // skip FROM stamp
@@ -127,15 +127,15 @@ func parsePayPeriodArgs(db *sql.DB, args []string) (bool, *BillSchema, error) {
 			case "-t":
 				toStamp, e = strconv.ParseInt(strings.TrimSpace(args[i+1]), 10, 64)
 				if e != nil {
-					return isDryRun, nil, errors.New(fmt.Sprintf(
-						"bad TO timestamp, '%s'", args[i+1]))
+					return isDryRun, nil, fmt.Errorf(
+						"bad TO timestamp, '%s'", args[i+1])
 				}
 				isImpliedTo = false
 				i++ // skip TO stamp
 
 			default:
-				return isDryRun, nil, errors.New(fmt.Sprintf(
-					"unrecognized commandline at '%s'", args[i:]))
+				return isDryRun, nil, fmt.Errorf(
+					"unrecognized commandline at '%s'", args[i:])
 			}
 		}
 	}
@@ -185,13 +185,13 @@ func commitPayPeriod(db *sql.DB, b *BillSchemaSQL) error {
 func markPayPeriod(dbPath string, args []string) error {
 	db, e := sql.Open("sqlite3", dbPath)
 	if e != nil {
-		return errors.New(fmt.Sprintf("bill sql: %s", e))
+		return fmt.Errorf("bill sql: %s", e)
 	}
 	defer db.Close()
 
 	isDryRun, bill, e := parsePayPeriodArgs(db, args)
 	if e != nil {
-		return errors.New(fmt.Sprintf("parse args: %s", e))
+		return fmt.Errorf("parse args: %s", e)
 	}
 
 	if isDryRun {

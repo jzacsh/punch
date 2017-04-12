@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -13,17 +12,17 @@ var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
 func isDbReadableFile() (string, os.FileInfo, error) {
 	p := os.Getenv(dbEnvVar)
 	if len(p) == 0 {
-		return "", nil, errors.New(fmt.Sprintf("$%s is not set", dbEnvVar))
+		return "", nil, fmt.Errorf("$%s is not set", dbEnvVar)
 	}
 
 	f, e := os.Stat(p)
 	if e != nil {
-		return p, f, errors.New(fmt.Sprintf(
-			"$%s could not be read; tried, '%s'", dbEnvVar, p))
+		return p, f, fmt.Errorf(
+			"$%s could not be read; tried, '%s'", dbEnvVar, p)
 	}
 
 	if f.IsDir() {
-		return "", f, errors.New(fmt.Sprintf("$%s must be a regular file", dbEnvVar))
+		return "", f, fmt.Errorf("$%s must be a regular file", dbEnvVar)
 	}
 	return p, f, nil
 }

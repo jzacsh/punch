@@ -16,14 +16,14 @@ func parseArgs(args []string) (string, string, error) {
 	clientOrFlag := strings.TrimSpace(args[0])
 	if len(args) == 1 {
 		if clientOrFlag == "-n" {
-			return "", "", errors.New(fmt.Sprintf(
-				"expected CLIENT, -n NOTE, or CLIENT -n NOTE, but got just -n"))
+			return "", "", fmt.Errorf(
+				"expected CLIENT, -n NOTE, or CLIENT -n NOTE, but got just -n")
 		}
 
 		client = clientOrFlag
 		if len(client) == 0 {
-			return "", "", errors.New(fmt.Sprintf(
-				"CLIENT must be non-empty (or -n provided), but got '%s'", args[0]))
+			return "", "", fmt.Errorf(
+				"CLIENT must be non-empty (or -n provided), but got '%s'", args[0])
 		}
 		return client, note, nil
 	} else {
@@ -35,18 +35,18 @@ func parseArgs(args []string) (string, string, error) {
 			noteRaw = strings.Join(args[2:], " ")
 
 			if flagOrNoteChunk != "-n" {
-				return "", "", errors.New(fmt.Sprintf(
+				return "", "", fmt.Errorf(
 					"expected CLIENT [-n NOTE], but got CLIENT='%s' followed by, '%s'",
-					clientOrFlag, noteRaw))
+					clientOrFlag, noteRaw)
 			}
 		}
 	}
 
 	note = strings.TrimSpace(noteRaw)
 	if len(note) < 1 {
-		return "", "", errors.New(fmt.Sprintf(
+		return "", "", fmt.Errorf(
 			"expected -n NOTE but '-n %s'",
-			noteRaw))
+			noteRaw)
 	}
 
 	return client, note, nil
@@ -67,14 +67,14 @@ func getImpliedClient(db *sql.DB) (string, error) {
 	for rows.Next() {
 		card, e := scanToCard(rows)
 		if e != nil {
-			return "", errors.New(fmt.Sprintf("punch cards: %s", e))
+			return "", fmt.Errorf("punch cards: %s", e)
 		}
 
 		if card.IsStart {
 			if len(punchedInto) > 0 {
-				return "", errors.New(fmt.Sprintf(
+				return "", fmt.Errorf(
 					"implying one CLIENT is on clock, but found 2: '%s' & '%s'",
-					punchedInto, card.Project))
+					punchedInto, card.Project)
 			}
 			punchedInto = card.Project
 		}
@@ -137,7 +137,7 @@ func processPunch(dbPath string, args []string) error {
 
 	db, e := sql.Open("sqlite3", dbPath)
 	if e != nil {
-		return errors.New(fmt.Sprintf("punch cards: %s", e))
+		return fmt.Errorf("punch cards: %s", e)
 	}
 	defer db.Close()
 

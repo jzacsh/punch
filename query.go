@@ -252,7 +252,7 @@ func hack_queryPaychecksIn(db *sql.DB, clients []string) (*sql.Rows, error) {
 	if len(clients) > 0 {
 		for i, c := range clients {
 			if !isValidClient(c) {
-				return nil, errors.New(fmt.Sprintf("invalid client: '%s'", c))
+				return nil, fmt.Errorf("invalid client: '%s'", c)
 			}
 			clients[i] = strings.TrimSpace(c)
 		}
@@ -305,7 +305,7 @@ func queryBills(db *sql.DB, clients []string) error {
 func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 	db, e := sql.Open("sqlite3", dbPath)
 	if e != nil {
-		return errors.New(fmt.Sprintf("punch cards: %s", e))
+		return fmt.Errorf("punch cards: %s", e)
 	}
 	defer db.Close()
 
@@ -332,14 +332,14 @@ func cardQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 		if len(args) > 2 {
 			fromStamp, e := strconv.ParseInt(args[2], 10, 64)
 			if e != nil {
-				return errors.New(fmt.Sprintf("parsing FROM_STAMP: %s", e))
+				return fmt.Errorf("parsing FROM_STAMP: %s", e)
 			}
 			from = time.Unix(fromStamp, 0 /*nanoseconds*/)
 		}
 		queryClient(db, args[1], &from)
 	default:
-		return errors.New(fmt.Sprintf(
-			"usage error: unrecognized query cmd, '%s'", args[0]))
+		return fmt.Errorf(
+			"usage error: unrecognized query cmd, '%s'", args[0])
 	}
 
 	return nil
