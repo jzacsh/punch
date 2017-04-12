@@ -117,11 +117,19 @@ func parsePayPeriodArgs(db *sql.DB, args []string) (bool, *BillSchema, error) {
 
 			case "-f":
 				fromStamp, e = strconv.ParseInt(strings.TrimSpace(args[i+1]), 10, 64)
+				if e != nil {
+					return isDryRun, nil, errors.New(fmt.Sprintf(
+						"bad FROM timestamp, '%s'", args[i+1]))
+				}
 				isImpliedFrom = false
 				i++ // skip FROM stamp
 
 			case "-t":
 				toStamp, e = strconv.ParseInt(strings.TrimSpace(args[i+1]), 10, 64)
+				if e != nil {
+					return isDryRun, nil, errors.New(fmt.Sprintf(
+						"bad TO timestamp, '%s'", args[i+1]))
+				}
 				isImpliedTo = false
 				i++ // skip TO stamp
 
