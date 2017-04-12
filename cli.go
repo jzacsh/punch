@@ -28,32 +28,40 @@ func isDbReadableFile() (string, os.FileInfo, error) {
 	return p, f, nil
 }
 
+func maybeHandleHelpCli() {
+	firstArgChars := strings.Replace(os.Args[1], "-", "", -1)
+	if !helpRegexp.MatchString(firstArgChars) {
+		return
+	}
+	helpDoc := helpCli()
+	if helpLongRegexp.MatchString(firstArgChars) {
+		helpDoc = helpManual()
+		if len(os.Args) > 2 {
+			secondArg := strings.TrimSpace(os.Args[2])
+			if isSubCmd(secondArg) {
+				switch secondArg {
+				case "p", "punch":
+					helpDoc = helpCmdPunch(false /*cliOnly*/)
+				case "bill":
+					helpDoc = helpCmdBill(false /*cliOnly*/)
+				case "q", "query":
+					helpDoc = helpCmdQuery(false /*cliOnly*/)
+				}
+			}
+		}
+	}
+	fmt.Fprint(os.Stderr, helpDoc)
+	os.Exit(0)
+}
+
 // TODO(zacsh) allow for global flag to indicate punch in/out renderings should
 // be in their original unix timestamp (rather than time.Unix().String()
 // rendering)
 func main() {
-	firstArgChars := strings.Replace(os.Args[1], "-", "", -1)
-	if len(os.Args) > 1 && helpRegexp.MatchString(firstArgChars) {
-		helpDoc := helpCli()
-		if helpLongRegexp.MatchString(firstArgChars) {
-			helpDoc = helpManual()
-			if len(os.Args) > 2 {
-				secondArg := strings.TrimSpace(os.Args[2])
-				if isSubCmd(secondArg) {
-					switch secondArg {
-					case "p", "punch":
-						helpDoc = helpCmdPunch(false /*cliOnly*/)
-					case "bill":
-						helpDoc = helpCmdBill(false /*cliOnly*/)
-					case "q", "query":
-						helpDoc = helpCmdQuery(false /*cliOnly*/)
-					}
-				}
-			}
-		}
-		fmt.Fprint(os.Stderr, helpDoc)
-		os.Exit(0)
+	if len(os.Args) > 1 {
+		maybeHandleHelpCli()
 	}
+
 
 	// TODO(zacsh) finish create.go for graceful first-time creation, eg:
 	//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
