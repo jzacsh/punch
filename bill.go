@@ -111,23 +111,19 @@ func parsePayPeriodArgs(db *sql.DB, args []string) (bool, *BillSchema, error) {
 					return isDryRun, nil, errors.New("-n passed, but no NOTE found.")
 				}
 				i = len(args) // end for loop
-				break         // TODO necessary in go?
 
 			case "-d":
 				isDryRun = true
-				break // TODO necessary in go?
 
 			case "-f":
 				fromStamp, e = strconv.ParseInt(strings.TrimSpace(args[i+1]), 10, 64)
 				isImpliedFrom = false
-				i++   // skip FROM stamp
-				break // TODO necessary in go?
+				i++ // skip FROM stamp
 
 			case "-t":
 				toStamp, e = strconv.ParseInt(strings.TrimSpace(args[i+1]), 10, 64)
 				isImpliedTo = false
-				i++   // skip TO stamp
-				break // TODO necessary in go?
+				i++ // skip TO stamp
 
 			default:
 				return isDryRun, nil, errors.New(fmt.Sprintf(
