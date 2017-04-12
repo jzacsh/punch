@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strings"
+)
 
 const dbEnvVar string = "PUNCH_CARD"
 
@@ -158,4 +162,25 @@ func helpCli() string {
 		helpCmdPunch(true /*cliOnly*/),
 		helpCmdBill(true /*cliOnly*/),
 		helpCmdQuery(true /*cliOnly*/))
+}
+
+func subCmdHelp(firstArgChars string, args []string) {
+	helpDoc := helpCli()
+	if helpLongRegexp.MatchString(firstArgChars) {
+		helpDoc = helpManual()
+		if len(args) > 1 {
+			secondArg := strings.TrimSpace(args[1])
+			if isSubCmd(secondArg) {
+				switch secondArg {
+				case "p", "punch":
+					helpDoc = helpCmdPunch(false /*cliOnly*/)
+				case "bill":
+					helpDoc = helpCmdBill(false /*cliOnly*/)
+				case "q", "query":
+					helpDoc = helpCmdQuery(false /*cliOnly*/)
+				}
+			}
+		}
+	}
+	fmt.Fprint(os.Stderr, helpDoc)
 }

@@ -129,7 +129,7 @@ func punchProject(db *sql.DB, card *CardSchemaSQL) error {
 	return e
 }
 
-func processPunch(dbPath string, args []string) error {
+func subCmdPunch(dbPath string, args []string) error {
 	explicitClient, note, e := parseArgs(args)
 	if e != nil {
 		return e

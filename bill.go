@@ -182,7 +182,7 @@ func commitPayPeriod(db *sql.DB, b *BillSchemaSQL) error {
 	return e
 }
 
-func markPayPeriod(dbPath string, args []string) error {
+func subCmdBill(dbPath string, args []string) error {
 	db, e := sql.Open("sqlite3", dbPath)
 	if e != nil {
 		return fmt.Errorf("bill sql: %s", e)

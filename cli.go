@@ -34,24 +34,7 @@ func maybeHandleHelpCli() {
 	if !helpRegexp.MatchString(firstArgChars) {
 		return
 	}
-	helpDoc := helpCli()
-	if helpLongRegexp.MatchString(firstArgChars) {
-		helpDoc = helpManual()
-		if len(os.Args) > 2 {
-			secondArg := strings.TrimSpace(os.Args[2])
-			if isSubCmd(secondArg) {
-				switch secondArg {
-				case "p", "punch":
-					helpDoc = helpCmdPunch(false /*cliOnly*/)
-				case "bill":
-					helpDoc = helpCmdBill(false /*cliOnly*/)
-				case "q", "query":
-					helpDoc = helpCmdQuery(false /*cliOnly*/)
-				}
-			}
-		}
-	}
-	fmt.Fprint(os.Stderr, helpDoc)
+	subCmdHelp(firstArgChars, os.Args[1:])
 	os.Exit(0)
 }
 
@@ -79,7 +62,7 @@ func main() {
 	}
 
 	if isCmdDefault {
-		if e := cardQuery(dbInfo, dbPath, []string{queryDefaultCmd}); e != nil {
+		if e := subCmdQuery(dbInfo, dbPath, []string{queryDefaultCmd}); e != nil {
 			fmt.Fprintf(os.Stderr, "status check: %s\n")
 			os.Exit(1)
 		}
@@ -88,17 +71,17 @@ func main() {
 
 	switch os.Args[1] {
 	case "p", "punch":
-		if e := processPunch(dbPath, os.Args[2:]); e != nil {
+		if e := subCmdPunch(dbPath, os.Args[2:]); e != nil {
 			fmt.Fprintf(os.Stderr, "punch failed: %s\n", e)
 			os.Exit(1)
 		}
 	case "bill":
-		if e := markPayPeriod(dbPath, os.Args[2:]); e != nil {
+		if e := subCmdBill(dbPath, os.Args[2:]); e != nil {
 			fmt.Fprintf(os.Stderr, "bill failed: %s\n", e)
 			os.Exit(1)
 		}
 	case "q", "query":
-		if e := cardQuery(dbInfo, dbPath, os.Args[2:]); e != nil {
+		if e := subCmdQuery(dbInfo, dbPath, os.Args[2:]); e != nil {
 			fmt.Fprintf(os.Stderr, "query failed: %s\n", e)
 			os.Exit(1)
 		}
