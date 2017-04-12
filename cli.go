@@ -51,10 +51,12 @@ func main() {
 	dbPath, dbInfo, e := isDbReadableFile()
 	if e != nil {
 		if isCmdDefault && len(dbPath) > 0 {
-			// TODO(zacsh) finish create.go for graceful first-time creation, eg:
-			//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
-			fmt.Fprintf(os.Stderr, "auto-creation of db not yet implemented\n")
-			os.Exit(1)
+			exitCode := 0
+			if e := subCmdCreate(dbPath); e != nil {
+				fmt.Fprintf(os.Stderr, "need sqlite3 db: %s\n", e)
+				exitCode = 1
+			}
+			os.Exit(exitCode)
 		} else {
 			fmt.Fprintf(os.Stderr, "Error checking database (see -h): %s\n", e)
 			os.Exit(1)
