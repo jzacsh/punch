@@ -37,6 +37,19 @@ func main() {
 		helpDoc := helpCli()
 		if helpLongRegexp.MatchString(firstArgChars) {
 			helpDoc = helpManual()
+			if len(os.Args) > 2 {
+				secondArg := strings.TrimSpace(os.Args[2])
+				if isSubCmd(secondArg) {
+					switch secondArg {
+					case "p", "punch":
+						helpDoc = helpCmdPunch(false /*cliOnly*/)
+					case "bill":
+						helpDoc = helpCmdBill(false /*cliOnly*/)
+					case "q", "query":
+						helpDoc = helpCmdQuery(false /*cliOnly*/)
+					}
+				}
+			}
 		}
 		fmt.Fprint(os.Stderr, helpDoc)
 		os.Exit(0)
