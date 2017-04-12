@@ -34,5 +34,4 @@ subcommands are basically complete, and implement all the features I've actively
 been utilizng in the {punchsh}[bash implementation of punch].
 
 .TODO
-. bash completion (mostly needs dropping-in from existing implementation)
 . *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
