@@ -194,20 +194,30 @@ func markPayPeriod(dbPath string, args []string) error {
 		return fmt.Errorf("parse args: %s", e)
 	}
 
-	if isDryRun {
-		fmt.Fprintf(os.Stderr, `
-    DRY RUN(-d): will create bill for '%s':
+	var note string
+	if len(bill.Note) > 0 {
+		note = fmt.Sprintf(`With NOTE:
+    %s`, bill.Note)
+	}
+
+	fmt.Fprintf(os.Stderr, `    Will create bill for '%s':
       from '%s'
       to   '%s'
-    NOTE:
     %s%s`,
-			bill.Project,
-			bill.Startclusive,
-			bill.Endclusive,
-			bill.Note,
-			"\n")
+		bill.Project,
+		bill.Startclusive,
+		bill.Endclusive,
+		note,
+		"\n")
+
+	if isDryRun {
+		fmt.Fprintf(os.Stderr, "\n[-d]ry-run mode; NOT writing any changes\n")
 		return nil
-	} else {
-		return commitPayPeriod(db, bill.toSQL())
 	}
+
+	e = commitPayPeriod(db, bill.toSQL())
+	if e == nil {
+		fmt.Fprintf(os.Stderr, "Done.\n")
+	}
+	return e
 }
