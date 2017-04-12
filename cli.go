@@ -87,7 +87,7 @@ EXAMPLES:
    Not on the clock.
    $ punch p puzzles -n 'free time to tackle tetris in Brainfuck'
 
-  Unix timestamps can be easily obtained. Passing '+%s' to GNU's DATE(1)
+  Unix timestamps can be easily obtained. Passing '+%%s' to GNU's DATE(1)
   utilizes its excellent parser output to produce valid unix timestamps:
    $ date    # Tue Apr 11 08:58:26 EDT 2017
    $ date     --date=yesterday
