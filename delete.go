@@ -27,9 +27,9 @@ func (d *DeleteCmd) isTargetingBill() bool {
 
 func (d *DeleteCmd) String() string {
 	return fmt.Sprintf(
-		"Delete %s for '%s' at %s (timestamp %d) [dry-run=%t]",
-		d.Target,
+		"Delete '%s'-%s at %s (timestamp %d) [dry-run=%t]",
 		d.Client,
+		d.Target,
 		d.At.Format(format_dateTime),
 		d.At.Unix(),
 		d.IsDryRun)
