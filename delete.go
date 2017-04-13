@@ -17,6 +17,14 @@ type DeleteCmd struct {
 	At       time.Time
 }
 
+func (d *DeleteCmd) isTargetingPunch() bool {
+	return !d.isTargetingBill()
+}
+
+func (d *DeleteCmd) isTargetingBill() bool {
+	return d.Target == "bill"
+}
+
 func (d *DeleteCmd) String() string {
 	return fmt.Sprintf(
 		"Delete %s for '%s' at %s (timestamp %d) [dry-run=%t]",
@@ -79,7 +87,7 @@ func subCmdDelete(dbPath string, args []string) error {
 	fmt.Printf("%s\n", cmd)
 
 	var stmt *sql.Stmt
-	if cmd.Target == "bill" {
+	if cmd.isTargetingBill() {
 		stmt, e = db.Prepare(`
 		 -- TODO something w/ 2 questions
 		`)
@@ -95,7 +103,7 @@ func subCmdDelete(dbPath string, args []string) error {
 		return nil
 	}
 
-	if cmd.Target == "bill" {
+	if cmd.isTargetingBill() {
 		stmt.Exec(cmd.Client, cmd.At.Unix())
 	} else {
 		return fmt.Errorf(
