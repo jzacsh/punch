@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"strconv"
 	"strings"
@@ -68,10 +70,37 @@ func subCmdDelete(dbPath string, args []string) error {
 		return fmt.Errorf("parsing command: %s", e)
 	}
 
+	db, e := sql.Open("sqlite3", dbPath)
+	if e != nil {
+		return fmt.Errorf("delete from db: %s", e)
+	}
+	defer db.Close()
+
 	fmt.Printf("%s\n", cmd)
+
+	var stmt *sql.Stmt
+	if cmd.Action == "bill" {
+		stmt, e = db.Prepare(`
+		 -- TODO something w/ 2 questions
+		`)
+		if e != nil {
+			return fmt.Errorf("preparing SQL for deletion: %s", e)
+		}
+	} else {
+		return fmt.Errorf("%s deletion not yet implemented :(", cmd.Action) // TODO
+	}
+
 	if cmd.IsDryRun {
 		fmt.Fprint(os.Stderr, "[-d]ry-run: finishing early; NO changes written\n")
 		return nil
+	}
+
+	if cmd.Action == "bill" {
+		stmt.Exec(cmd.Client, cmd.At.Unix())
+	} else {
+		return fmt.Errorf(
+			"%s deletion exec not yet implemented :(",
+			cmd.Action) // TODO
 	}
 
 	return fmt.Errorf("not yet implemented :(") // TODO
