@@ -35,6 +35,48 @@ func (d *DeleteCmd) String() string {
 		d.IsDryRun)
 }
 
+func (d *DeleteCmd) Report(db *sql.DB) error {
+	fmt.Printf("%s...\n", d)
+
+	if d.isTargetingBill() {
+		rows, e := db.Query(`
+		SELECT * FROM paychecks
+		WHERE project IS ?
+		AND startclusive IS ?
+		;`, d.Client, d.At.Unix())
+		if e != nil {
+			return fmt.Errorf("querying DB: %s", e)
+		}
+		defer rows.Close()
+		foundTarget := false
+		for rows.Next() {
+			b, e := scanToBill(rows)
+			if e != nil {
+				return fmt.Errorf("parsing DB response: %s", e)
+			}
+
+			if foundTarget {
+				return fmt.Errorf("malformed data: found TWO payperiods sharing start time")
+			}
+
+			foundTarget = true
+			fmt.Printf(
+				"FOUND target bill to delete [%s]:\n%s\n",
+				getTZContext(),
+				b.String(false /*showTimezone*/))
+		}
+		if !foundTarget {
+			return fmt.Errorf(
+				"no '%s' payperiods start at %s",
+				d.Client, d.At.Format(format_dateTime))
+		}
+	} else {
+		return fmt.Errorf("reporting for punch-deletions, not yet implemented")
+	}
+
+	return nil
+}
+
 func parseDeleteCmd(args []string) (*DeleteCmd, error) {
 	cmd := &DeleteCmd{}
 	if len(args) < 3 {
@@ -84,7 +126,11 @@ func subCmdDelete(dbPath string, args []string) error {
 	}
 	defer db.Close()
 
-	fmt.Printf("%s\n", cmd)
+	if e := cmd.Report(db); e != nil {
+		return e
+	}
+
+	// Do as much as possible before: committing or bailing(dry-run)
 
 	var stmt *sql.Stmt
 	if cmd.isTargetingBill() {
