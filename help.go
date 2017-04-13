@@ -115,9 +115,10 @@ func helpCmdQuery(cliOnly bool) string {
 	if !cliOnly {
 		queryHelp = `
     Allows you to query your work activity, where QUERY is any one of the
-    below. If no QUERY is provided, a dump of the database as comma-separated
-    values will be generated (ordered by punch-date, one-punch per-line).
+    below. If no QUERY is provided, 'dump' is assumed.
   - list: Lists all "clients"/"projects" for which records currently exist
+  - dump: pseudo CSV-esque dump of database values, ordered by punch-date,
+    one-punch per-line.
   - report CLIENT [FROM_STAMP]: Prints a general report on the CLIENT provided.
     If a unix timestamp FROM_STAMP (in seconds) is specified, it's used as
     furthest boundary back to fetch records. See DATE(1) under EXAMPLES for more

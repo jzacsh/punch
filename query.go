@@ -305,11 +305,12 @@ func subCmdQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 	}
 	defer db.Close()
 
-	if len(args) == 0 {
-		return queryDump(db)
+	subCmd := "dump"
+	if len(args) > 0 {
+		subCmd = args[0]
 	}
 
-	switch args[0] {
+	switch subCmd {
 	case "bill", "bills":
 		var clients []string
 		if len(args) > 1 {
@@ -333,9 +334,11 @@ func subCmdQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 			from = time.Unix(fromStamp, 0 /*nanoseconds*/)
 		}
 		queryClient(db, args[1], &from)
+	case "dump":
+		return queryDump(db)
 	default:
 		return fmt.Errorf(
-			"usage error: unrecognized query cmd, '%s'", args[0])
+			"usage error: unrecognized query cmd, '%s'", subCmd)
 	}
 
 	return nil
