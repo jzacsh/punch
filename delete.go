@@ -135,8 +135,10 @@ func subCmdDelete(dbPath string, args []string) error {
 	var stmt *sql.Stmt
 	if cmd.isTargetingBill() {
 		stmt, e = db.Prepare(`
-		 -- TODO something w/ 2 questions
-		`)
+		DELETE FROM paychecks
+		WHERE project iS ?
+		AND startclusive IS ?
+		;`)
 		if e != nil {
 			return fmt.Errorf("preparing SQL for deletion: %s", e)
 		}
@@ -150,12 +152,15 @@ func subCmdDelete(dbPath string, args []string) error {
 	}
 
 	if cmd.isTargetingBill() {
-		stmt.Exec(cmd.Client, cmd.At.Unix())
+		if _, e := stmt.Exec(cmd.Client, cmd.At.Unix()); e != nil {
+			return e
+		}
 	} else {
 		return fmt.Errorf(
 			"%s deletion exec not yet implemented :(",
 			cmd.Target) // TODO
 	}
 
-	return fmt.Errorf("not yet implemented :(") // TODO
+	fmt.Println("Done.")
+	return nil
 }
