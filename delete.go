@@ -11,7 +11,7 @@ import (
 )
 
 type DeleteCmd struct {
-	Action   string
+	Target   string
 	Client   string
 	IsDryRun bool
 	At       time.Time
@@ -20,7 +20,7 @@ type DeleteCmd struct {
 func (d *DeleteCmd) String() string {
 	return fmt.Sprintf(
 		"Delete %s for '%s' at %s (timestamp %d) [dry-run=%t]",
-		d.Action,
+		d.Target,
 		d.Client,
 		d.At.Format(format_dateTime),
 		d.At.Unix(),
@@ -34,10 +34,10 @@ func parseDeleteCmd(args []string) (*DeleteCmd, error) {
 			"expected at least 3 args per 'bill|punch CLIENT [-d] AT', got %d",
 			len(args))
 	}
-	cmd.Action = strings.TrimSpace(args[0])
-	if cmd.Action != "bill" && cmd.Action != "punch" {
+	cmd.Target = strings.TrimSpace(args[0])
+	if cmd.Target != "bill" && cmd.Target != "punch" {
 		return cmd, fmt.Errorf(
-			"expected either 'bill' or 'punch', got '%s'", cmd.Action)
+			"expected either 'bill' or 'punch', got '%s'", cmd.Target)
 	}
 
 	cmd.Client = strings.TrimSpace(args[1])
@@ -79,7 +79,7 @@ func subCmdDelete(dbPath string, args []string) error {
 	fmt.Printf("%s\n", cmd)
 
 	var stmt *sql.Stmt
-	if cmd.Action == "bill" {
+	if cmd.Target == "bill" {
 		stmt, e = db.Prepare(`
 		 -- TODO something w/ 2 questions
 		`)
@@ -87,7 +87,7 @@ func subCmdDelete(dbPath string, args []string) error {
 			return fmt.Errorf("preparing SQL for deletion: %s", e)
 		}
 	} else {
-		return fmt.Errorf("%s deletion not yet implemented :(", cmd.Action) // TODO
+		return fmt.Errorf("%s deletion not yet implemented :(", cmd.Target) // TODO
 	}
 
 	if cmd.IsDryRun {
@@ -95,12 +95,12 @@ func subCmdDelete(dbPath string, args []string) error {
 		return nil
 	}
 
-	if cmd.Action == "bill" {
+	if cmd.Target == "bill" {
 		stmt.Exec(cmd.Client, cmd.At.Unix())
 	} else {
 		return fmt.Errorf(
 			"%s deletion exec not yet implemented :(",
-			cmd.Action) // TODO
+			cmd.Target) // TODO
 	}
 
 	return fmt.Errorf("not yet implemented :(") // TODO
