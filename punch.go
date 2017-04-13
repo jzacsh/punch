@@ -110,7 +110,7 @@ func isPunchIn(db *sql.DB, client string, isImplicitPunchOut bool) (bool, error)
 		}
 		return !card.IsStart, nil
 	}
-	return false, nil
+	return true, nil
 }
 
 func punchProject(db *sql.DB, card *CardSchemaSQL) error {
