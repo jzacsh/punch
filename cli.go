@@ -91,6 +91,11 @@ func main() {
 			fmt.Fprintf(os.Stderr, "query failed: %s\n", e)
 			os.Exit(1)
 		}
+	case "d", "delete":
+		if e := subCmdDelete(dbPath, os.Args[2:]); e != nil {
+			fmt.Fprintf(os.Stderr, "delete failed: %s\n", e)
+			os.Exit(1)
+		}
 	default:
 		fmt.Fprintf(os.Stderr,
 			"valid sub-command required (ie: not '%s'); try --h for usage\n", os.Args[1])

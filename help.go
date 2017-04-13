@@ -16,7 +16,8 @@ const helpDoesWhat string = "logs & reports time worked on any project"
 func isSubCmd(str string) bool {
 	return str == "p" || str == "punch" ||
 		str == "bill" ||
-		str == "q" || str == "query"
+		str == "q" || str == "query" ||
+		str == "d" || str == "delete"
 }
 
 // Name, synopsis, description
@@ -80,7 +81,33 @@ func helpCmdBill(cliOnly bool) string {
     correlates overlaps in duration indicated by the payperiod with any
     durations logged through punches.`
 	}
-	return fmt.Sprintf("  bill CLIENT [-d] [-f FROM] [-t TO] [-n NOTE]\n%s\n", billHelp)
+	return fmt.Sprintf(
+		"  bill CLIENT [-d] [-f FROM] [-t TO] [-n NOTE]\n%s\n",
+		billHelp)
+}
+
+func helpCmdDelete(cliOnly bool) string {
+	var deleteHelp string
+	if !cliOnly {
+		deleteHelp = `
+    Interactively deletes payperiods or punches. The two cases are described below.
+
+    -d flag indicates this is a dry-run, and no modifiecations should be made.
+
+    Case 1: If 'bill' argument is passed, then a CLIENT's payperiod is deleted
+    where AT matches the payperiod's FROM timestamp.
+
+    Case 2: If 'punch' is specified then one of two things is done for CLIENT's
+    punches:
+     i) If AT matches a punch-out, and there are no punches since AT, then that
+        punch-out is deleted (ie: punch session is extended to put you back on
+        the clock).
+    ii) If AT matches a punch-in, then the entire session is deleted (from
+        punch-in to its corresponding punch-out, if one exists)`
+	}
+	return fmt.Sprintf(
+		"  delete bill|punch CLIENT [-d] AT\n%s\n",
+		deleteHelp)
 }
 
 func helpCmdQuery(cliOnly bool) string {
@@ -113,9 +140,11 @@ func helpSectionCommands() string {
     pseudo-grammar doc.
 %s
 %s
+%s
 %s`, queryDefaultCmd,
 		helpCmdPunch(false /*cliOnly*/),
 		helpCmdBill(false /*cliOnly*/),
+		helpCmdDelete(false /*cliOnly*/),
 		helpCmdQuery(false /*cliOnly*/))
 }
 
@@ -156,11 +185,12 @@ func helpManual() string {
 
 // the tl;dr version of helpManual
 func helpCli() string {
-	return fmt.Sprintf("usage: %s\n  %s\n\n%s%s%sSee --help for more\n",
+	return fmt.Sprintf("usage: %s\n  %s\n\n%s%s%s%sSee --help for more\n",
 		helpCliPattern,
 		helpDoesWhat,
 		helpCmdPunch(true /*cliOnly*/),
 		helpCmdBill(true /*cliOnly*/),
+		helpCmdDelete(true /*cliOnly*/),
 		helpCmdQuery(true /*cliOnly*/))
 }
 
@@ -178,6 +208,8 @@ func subCmdHelp(firstArgChars string, args []string) {
 					helpDoc = helpCmdBill(false /*cliOnly*/)
 				case "q", "query":
 					helpDoc = helpCmdQuery(false /*cliOnly*/)
+				case "d", "delete":
+					helpDoc = helpCmdDelete(false /*cliOnly*/)
 				}
 			}
 		}
