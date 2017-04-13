@@ -34,8 +34,6 @@ subcommands are basically complete, and implement all the features I've actively
 been utilizng in the {punchsh}[bash implementation of punch].
 
 .TODO
-. *feature*: create a new punchcard by default, per prompt
-  (ie: see create.go, of commit fb619f2d93d6)
 . *feature*: modify NOTE on any given punch
 . *feature*: DELETE a punch
 . *feature*: DELETE a payperiod

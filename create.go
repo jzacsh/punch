@@ -11,24 +11,6 @@ import (
 	"strings"
 )
 
-/**
-TODO(zacsh) write code to create a punchcard from scratch
-
- CREATE TABLE punchcard (
-     punch       INTEGER NOT NULL PRIMARY KEY,
-     status      INTEGER NOT NULL,
-     project     TEXT NOT NULL,
-     note        TEXT
- );
-
- CREATE TABLE paychecks (
-     endclusive   INTEGER NOT NULL PRIMARY KEY,
-     startclusive INTEGER NOT NULL,
-     project      TEXT NOT NULL,
-     note         TEXT
- );
-*/
-
 func ensureUserWantsAutocreation(dbPath string) error {
 	fmt.Printf(
 		"$PUNCH_CARD database not yet created\n\t%s\n", dbPath)
@@ -46,8 +28,6 @@ func ensureUserWantsAutocreation(dbPath string) error {
 	return nil
 }
 
-// TODO(zacsh) finish create.go for graceful first-time creation, eg:
-//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
 func subCmdCreate(dbPath string) error {
 	if e := ensureUserWantsAutocreation(dbPath); e != nil {
 		return e
@@ -58,8 +38,42 @@ func subCmdCreate(dbPath string) error {
 		return fmt.Errorf("error opening sqlite3: %s", e)
 	}
 
-	fmt.Fprint(os.Stderr,
-		"[dbg] not yet implemented, about to auto-create...\n%s\n\n", db) // TOOD remove
+	stmt, e := db.Prepare(`
+CREATE TABLE punchcard (
+  punch       INTEGER NOT NULL PRIMARY KEY,
+  status      INTEGER NOT NULL,
+  project     TEXT NOT NULL,
+  note        TEXT
+);
+	`)
+	if e != nil {
+		return fmt.Errorf("preparing punchcard table: %s", e)
+	}
+	if _, e := stmt.Exec(); e != nil {
+		return fmt.Errorf("creating punchcard table: %s", e)
+	}
 
+	stmt, e = db.Prepare(`
+CREATE TABLE paychecks (
+  endclusive   INTEGER NOT NULL PRIMARY KEY,
+  startclusive INTEGER NOT NULL,
+  project      TEXT NOT NULL,
+  note         TEXT
+);
+	`)
+	if e != nil {
+		return fmt.Errorf("preparing paychecks table: %s", e)
+	}
+	if _, e := stmt.Exec(); e != nil {
+		return fmt.Errorf("creating paychecks table: %s", e)
+	}
+
+	fmt.Print(`Empty tables successfully created.
+
+  To start keep records try 'punch' and 'query' commands.
+	For reminders of their arguments, see '-h'.
+	For a listing of ALL commands and full docs, see 'help'
+	For a reminder of what one command does, see 'help [cmd]', eg: 'help punch'
+`)
 	return nil
 }

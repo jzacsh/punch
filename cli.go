@@ -11,7 +11,7 @@ var helpRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help|h)(\b|$)")
 var helpLongRegexp *regexp.Regexp = regexp.MustCompile("(\b|^)(help)(\b|$)")
 
 // Guarantees env. var value WILL return, even on error not nil
-func isDbReadableFile() (string, os.FileInfo, error) {
+func isDbReadableNonemptyFile() (string, os.FileInfo, error) {
 	p := os.Getenv(dbEnvVar)
 	if len(p) == 0 {
 		return "", nil, fmt.Errorf("$%s is not set", dbEnvVar)
@@ -21,6 +21,10 @@ func isDbReadableFile() (string, os.FileInfo, error) {
 	if e != nil {
 		return p, f, fmt.Errorf(
 			"$%s could not be read; tried, '%s'", dbEnvVar, p)
+	}
+
+	if f.Size() < 1 {
+		return p, f, fmt.Errorf("$%s is empty file", dbEnvVar)
 	}
 
 	if f.IsDir() {
@@ -48,9 +52,7 @@ func main() {
 
 	isCmdDefault := len(os.Args) < 2
 
-	// TODO change isDbReadableFile to isDbReadableNonemptyFile and indicate empty
-	// someehow
-	dbPath, dbInfo, e := isDbReadableFile()
+	dbPath, dbInfo, e := isDbReadableNonemptyFile()
 	if e != nil {
 		if isCmdDefault && len(dbPath) > 0 {
 			exitCode := 0
@@ -67,7 +69,7 @@ func main() {
 
 	if isCmdDefault {
 		if e := subCmdQuery(dbInfo, dbPath, []string{queryDefaultCmd}); e != nil {
-			fmt.Fprintf(os.Stderr, "status check: %s\n")
+			fmt.Fprintf(os.Stderr, "status check: %s\n", e)
 			os.Exit(1)
 		}
 		return
