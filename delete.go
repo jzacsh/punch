@@ -11,7 +11,7 @@ import (
 )
 
 type DeleteCmd struct {
-	Target   string
+	Target   string // "bill" or "punch"
 	Client   string
 	IsDryRun bool
 	At       time.Time
