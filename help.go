@@ -90,9 +90,9 @@ func helpCmdDelete(cliOnly bool) string {
 	var deleteHelp string
 	if !cliOnly {
 		deleteHelp = `
-    Interactively deletes payperiods or punches. The two cases are described below.
-
-    -d flag indicates this is a dry-run, and no modifiecations should be made.
+    Interactively deletes payperiods or punches. The two cases are described
+    below. The -d flag indicates this is a dry-run, and no modifiecations should
+    be made.
 
     Case 1: If 'bill' argument is passed, then a CLIENT's payperiod is deleted
     where AT matches the payperiod's FROM timestamp.
