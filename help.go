@@ -106,7 +106,7 @@ func helpCmdDelete(cliOnly bool) string {
         punch-in to its corresponding punch-out, if one exists)`
 	}
 	return fmt.Sprintf(
-		"  delete bill|punch CLIENT [-d] AT\n%s\n",
+		"  d|delete bill|punch CLIENT [-d] AT\n%s\n",
 		deleteHelp)
 }
 
