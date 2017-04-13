@@ -48,6 +48,8 @@ func main() {
 
 	isCmdDefault := len(os.Args) < 2
 
+	// TODO change isDbReadableFile to isDbReadableNonemptyFile and indicate empty
+	// someehow
 	dbPath, dbInfo, e := isDbReadableFile()
 	if e != nil {
 		if isCmdDefault && len(dbPath) > 0 {

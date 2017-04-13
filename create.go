@@ -1,6 +1,9 @@
 package main
 
 import (
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
+
 	"bufio"
 	"errors"
 	"fmt"
@@ -26,9 +29,7 @@ TODO(zacsh) write code to create a punchcard from scratch
  );
 */
 
-// TODO(zacsh) finish create.go for graceful first-time creation, eg:
-//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
-func subCmdCreate(dbPath string) error {
+func ensureUserWantsAutocreation(dbPath string) error {
 	fmt.Printf(
 		"$PUNCH_CARD database not yet created\n\t%s\n", dbPath)
 	fmt.Printf("Should one be automatically started now? [y/N] ")
@@ -42,7 +43,23 @@ func subCmdCreate(dbPath string) error {
 	if len(response) < 1 || strings.ToLower(string(response[0])) != "y" {
 		return errors.New("auto-creation offer rejected")
 	}
+	return nil
+}
 
-	fmt.Fprint(os.Stderr, "[dbg] not yet implemented, about to auto-create...\n") // TOOD remove
+// TODO(zacsh) finish create.go for graceful first-time creation, eg:
+//   https://github.com/jzacsh/punch/blob/a1e40862a7203613cd/bin/punch#L240-L241
+func subCmdCreate(dbPath string) error {
+	if e := ensureUserWantsAutocreation(dbPath); e != nil {
+		return e
+	}
+
+	db, e := sql.Open("sqlite3", dbPath)
+	if e != nil {
+		return fmt.Errorf("error opening sqlite3: %s", e)
+	}
+
+	fmt.Fprint(os.Stderr,
+		"[dbg] not yet implemented, about to auto-create...\n%s\n\n", db) // TOOD remove
+
 	return nil
 }
