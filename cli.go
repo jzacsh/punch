@@ -52,6 +52,7 @@ func main() {
 
 	isCmdDefault := len(os.Args) < 2
 
+	// TODO(zacsh) nit: consider deleting `dbInfo` codepaths
 	dbPath, dbInfo, e := isDbReadableNonemptyFile()
 	if e != nil {
 		if isCmdDefault && len(dbPath) > 0 {
