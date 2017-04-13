@@ -71,7 +71,7 @@ func (d *DeleteCmd) Report(db *sql.DB) error {
 				d.Client, d.At.Format(format_dateTime))
 		}
 	} else {
-		return fmt.Errorf("reporting for punch-deletions, not yet implemented")
+		return fmt.Errorf("reporting for punch-deletions, not yet implemented") // TODO
 	}
 
 	return nil
