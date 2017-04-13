@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -28,6 +29,23 @@ func (b *BillSchema) toSQL() *BillSchemaSQL {
 		Project:      b.Project,
 		Note:         b.Note,
 	}
+}
+
+func (b *BillSchema) String(showTimezone bool) string {
+	var start, end string
+
+	if showTimezone {
+		start = b.Startclusive.Format(format_dateTime)
+		end = b.Endclusive.String() // unnecessary twice
+	} else {
+		start = b.Startclusive.Format(format_dateTime)
+		end = b.Endclusive.Format(format_dateTime)
+	}
+
+	return fmt.Sprintf("%s, %s, %s, %s",
+		b.Project,
+		start, end,
+		fromNote(b.Note))
 }
 
 type BillSchema struct {

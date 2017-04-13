@@ -288,11 +288,7 @@ func queryBills(db *sql.DB, clients []string) error {
 			return e
 		}
 		foundPayPeriod = true
-		fmt.Printf("%s, %s, %s, %s\n",
-			b.Project,
-			b.Startclusive.Format(format_dateTime),
-			b.Endclusive.Format(format_dateTime),
-			fromNote(b.Note))
+		fmt.Println(b.String(false /*showTimezone*/))
 	}
 	if !foundPayPeriod {
 		fmt.Printf("No pay-periods closed, yet.\n")
