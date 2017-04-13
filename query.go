@@ -307,7 +307,7 @@ func subCmdQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 
 	subCmd := "dump"
 	if len(args) > 0 {
-		subCmd = args[0]
+		subCmd = strings.TrimSpace(args[0])
 	}
 
 	switch subCmd {
