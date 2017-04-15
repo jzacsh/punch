@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -223,5 +222,5 @@ func subCmdHelp(firstArgChars string, args []string) {
 			}
 		}
 	}
-	fmt.Fprint(os.Stderr, helpDoc)
+	fmt.Print(helpDoc)
 }
