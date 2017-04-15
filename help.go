@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// NOTE: all defined at build time
+var VersionDate, VersionRef, VersionUrl, AppName string
+
 const dbEnvVar string = "PUNCH_CARD"
 
 const queryDefaultCmd string = "status"
@@ -23,7 +26,7 @@ func isSubCmd(str string) bool {
 // Name, synopsis, description
 func helpSectionHeader() string {
 	return fmt.Sprintf(`NAME
-  punch - %s
+  %s - %s
 
 SYNOPSIS
   %s
@@ -31,7 +34,7 @@ SYNOPSIS
 DESCRIPTION
   Manages your work clock, allowing you to "punch in" or "punch out" and query
   for some obvious stats & reporting you might want.
-`, helpDoesWhat, helpCliPattern)
+`, AppName, helpDoesWhat, helpCliPattern)
 }
 
 func helpCmdPunch(cliOnly bool) string {
@@ -173,7 +176,12 @@ EXAMPLES
    Fri Apr 14 20:00:00 EDT 2017
    $ date +%%s --date="8pm next Fri"
    1492214400 # perfect unix timestamp in seconds
-`, dbEnvVar, queryDefaultCmd)
+
+BUILD INFORMATION
+  This binary built %s at git ref %s.
+  To see this source for this program and a full copy of its license, see:
+    %s
+`, dbEnvVar, queryDefaultCmd, VersionDate, VersionRef, VersionUrl)
 }
 
 func helpManual() string {
