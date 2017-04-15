@@ -155,7 +155,7 @@ func helpSectionFooter() string {
   Work clock is an SQLite3 database file path, which is expected to be in $%s
   environment variable.
 
-EXAMPLES:
+EXAMPLES
   Common 'punch' command lines:
    $ punch # same as "punch query %s"
    ch: 99:01 so far
