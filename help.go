@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"golang.org/x/crypto/ssh/terminal"
+	"io"
+	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -191,6 +195,39 @@ func helpManual() string {
 		helpSectionFooter())
 }
 
+// Either pipes payload to a pager, or straight to stdout
+// Mostly taken from http://stackoverflow.com/a/21739281/287374
+func maybePipeToPager(payload string) {
+	pagerEnv := os.Getenv("PAGER")
+	if !terminal.IsTerminal(int(os.Stdout.Fd())) || len(pagerEnv) < 1 {
+		fmt.Print(payload)
+		return
+	}
+	pipeOut, pipeIn := io.Pipe()
+
+	pagerCmd := exec.Command(pagerEnv)
+	pagerCmd.Stdin = pipeOut
+	pagerCmd.Stdout = os.Stdout
+	pagerCmd.Stderr = os.Stderr
+
+	childChan := make(chan struct{})
+	go func() {
+		defer close(childChan)
+		if e := pagerCmd.Run(); e != nil {
+			fmt.Print(payload)
+			fmt.Fprintf(os.Stderr,
+				"WARNING: dumped direct to stdout, as $PAGER(%s) failed with:\n%s\n",
+				pagerEnv, e)
+			os.Exit(0)
+		}
+	}()
+
+	fmt.Fprint(pipeIn, payload)
+	pipeIn.Close()
+
+	<-childChan
+}
+
 // the tl;dr version of helpManual
 func helpCli() string {
 	return fmt.Sprintf("usage: %s\n  %s\n\n%s%s%s%sSee --help for more\n",
@@ -222,5 +259,5 @@ func subCmdHelp(firstArgChars string, args []string) {
 			}
 		}
 	}
-	fmt.Print(helpDoc)
+	maybePipeToPager(helpDoc)
 }
