@@ -87,7 +87,7 @@ func queryClient(db *sql.DB, client string, from *time.Time) error {
 			accumulating)
 	}
 
-	if len(punches) > 2 {
+	if len(punches) >= 2 {
 		fmt.Printf("Summary: Worked %s over %d sessions\n", total, numSessions)
 	} else {
 		var fromClause string
