@@ -16,7 +16,7 @@ const dbEnvVar string = "PUNCH_CARD"
 
 const queryDefaultCmd string = "status"
 
-const helpCliPattern string = "punch [punch|bill|query]"
+const helpCliPattern string = "punch [punch|bill|query|delete]"
 const helpDoesWhat string = "logs & reports time worked on any project"
 
 func isSubCmd(str string) bool {
