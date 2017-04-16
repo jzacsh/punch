@@ -185,7 +185,7 @@ EXAMPLES
 
 BUILD INFORMATION
   This binary built %s at git ref %s.
-  To see this source for this program and a full copy of its license, see:
+  To see the source for this program and a full copy of its license, see:
     %s
 `, dbEnvVar, queryDefaultCmd, VersionDate, VersionRef, VersionUrl)
 }
