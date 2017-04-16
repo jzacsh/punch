@@ -111,7 +111,7 @@ func (d *DeleteCmd) Report(db *sql.DB) (punchOut int64, _ error) {
 		}
 		if match == nil {
 			return punchOut, fmt.Errorf(
-				"No '%s' punches found between %s and now",
+				"no '%s' punches found between %s and now",
 				d.Client,
 				d.At.Format(format_dateTime))
 		}
