@@ -144,11 +144,11 @@ func subCmdPunch(dbPath string, args []string) error {
 	isImplicitPunchOut := false
 	client := explicitClient
 	if len(client) == 0 {
-		isImplicitPunchOut = true
 		client, e = getImpliedClient(db)
 		if e != nil {
 			return e
 		}
+		isImplicitPunchOut = true
 	}
 
 	isPunchIn, e := isPunchIn(db, client, isImplicitPunchOut)
