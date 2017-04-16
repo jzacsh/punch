@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"strings"
@@ -63,6 +62,8 @@ func getImpliedClient(db *sql.DB) (string, error) {
 	}
 	defer rows.Close()
 
+	errorMsgIntent := "implying one CLIENT is on clock"
+
 	var punchedInto string
 	for rows.Next() {
 		card, e := scanToCard(rows)
@@ -72,16 +73,15 @@ func getImpliedClient(db *sql.DB) (string, error) {
 
 		if card.IsStart {
 			if len(punchedInto) > 0 {
-				return "", fmt.Errorf(
-					"implying one CLIENT is on clock, but found 2: '%s' & '%s'",
-					punchedInto, card.Project)
+				return "", fmt.Errorf("%s, but found 2: '%s' & '%s'",
+					errorMsgIntent, punchedInto, card.Project)
 			}
 			punchedInto = card.Project
 		}
 	}
 
 	if len(punchedInto) == 0 {
-		return "", errors.New("implying one CLIENT is on clock, but none are")
+		return "", fmt.Errorf("%s, but none are", errorMsgIntent)
 	}
 
 	return punchedInto, nil
