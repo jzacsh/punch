@@ -16,14 +16,15 @@ const dbEnvVar string = "PUNCH_CARD"
 
 const queryDefaultCmd string = "status"
 
-const helpCliPattern string = "punch [punch|bill|query|delete]"
+const helpCliPattern string = "punch [punch|bill|query|delete|amend]"
 const helpDoesWhat string = "logs & reports time worked on any project"
 
 func isSubCmd(str string) bool {
 	return str == "p" || str == "punch" ||
 		str == "bill" ||
 		str == "q" || str == "query" ||
-		str == "d" || str == "delete"
+		str == "d" || str == "delete" ||
+		str == "a" || str == "amend"
 }
 
 // Name, synopsis, description
@@ -137,6 +138,20 @@ func helpCmdQuery(cliOnly bool) string {
 	return fmt.Sprintf("  q|query    [QUERY...]\n%s\n", queryHelp)
 }
 
+func helpCmdAmend(cliOnly bool) string {
+	var amendHelp string
+	if !cliOnly {
+		amendHelp = `
+    Allows replacing (or deleting) notes previously set to the punch record
+    whose timestamp matches TARGET_STAMP exactly. Note for matching punch is
+    replaced with NOTE.
+
+    If NOTE is not provided, the note for said punch is deleted. See DATE(1)
+    under EXAMPLES for more on TO/FROM timestamps.`
+	}
+	return fmt.Sprintf("  a|amend    TARGET_STAMP [NOTE]\n%s\n", amendHelp)
+}
+
 // Subcommands
 func helpSectionCommands() string {
 	return fmt.Sprintf(`COMMANDS
@@ -151,11 +166,13 @@ func helpSectionCommands() string {
 %s
 %s
 %s
+%s
 %s`, queryDefaultCmd,
 		helpCmdPunch(false /*cliOnly*/),
 		helpCmdBill(false /*cliOnly*/),
 		helpCmdDelete(false /*cliOnly*/),
-		helpCmdQuery(false /*cliOnly*/))
+		helpCmdQuery(false /*cliOnly*/),
+		helpCmdAmend(false /*cliOnly*/))
 }
 
 // Environment & Examples
@@ -233,13 +250,14 @@ func maybePipeToPager(payload string) {
 
 // the tl;dr version of helpManual
 func helpCli() string {
-	return fmt.Sprintf("usage: %s\n  %s\n\n%s%s%s%sSee --help for more\n",
+	return fmt.Sprintf("usage: %s\n  %s\n\n%s%s%s%s%sSee --help for more\n",
 		helpCliPattern,
 		helpDoesWhat,
 		helpCmdPunch(true /*cliOnly*/),
 		helpCmdBill(true /*cliOnly*/),
 		helpCmdDelete(true /*cliOnly*/),
-		helpCmdQuery(true /*cliOnly*/))
+		helpCmdQuery(true /*cliOnly*/),
+		helpCmdAmend(true /*cliOnly*/))
 }
 
 func subCmdHelp(firstArgChars string, args []string) {
@@ -258,6 +276,8 @@ func subCmdHelp(firstArgChars string, args []string) {
 					helpDoc = helpCmdQuery(false /*cliOnly*/)
 				case "d", "delete":
 					helpDoc = helpCmdDelete(false /*cliOnly*/)
+				case "a", "amend":
+					helpDoc = helpCmdAmend(false /*cliOnly*/)
 				}
 			}
 		}
