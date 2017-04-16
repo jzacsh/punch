@@ -34,5 +34,5 @@ subcommands are basically complete, and implement all the features I've actively
 been utilizng in the {punchsh}[bash implementation of punch].
 
 .TODO
-. *feature*: modify NOTE on any given punch
+. *feature*: modify NOTE on any given punch (under way as of `bf96e6d77e7`)
 . *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
