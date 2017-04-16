@@ -233,10 +233,10 @@ func queryStatus(db *sql.DB) error {
 		}
 	}
 
-	if !isOnClock {
-		fmt.Fprintf(os.Stderr, "Not on the clock.\n")
+	if isOnClock {
+		return nil
 	}
-	return nil
+	return fmt.Errorf("not on the clock")
 }
 
 // TODO figure out how to pass entire `clients` array as-is into var-args
