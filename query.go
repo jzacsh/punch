@@ -94,7 +94,11 @@ func queryClient(db *sql.DB, client string, from *time.Time) error {
 		if !isEmptyTime(from) {
 			fromClause = fmt.Sprintf(" in the past %s", time.Since(*from))
 		}
-		fmt.Printf("Warning: no records found for this client%s.\n", fromClause)
+		whatNotFound := "sessions"
+		if len(punches) == 0 && isEmptyTime(from) {
+			whatNotFound = "records" // we found _NOTHING_ and no FROM clause passed
+		}
+		fmt.Printf("Warning: no %s found for this client%s.\n", whatNotFound, fromClause)
 	}
 
 	return nil
