@@ -53,7 +53,7 @@ func queryClient(db *sql.DB, client string, from *time.Time) error {
 
 	var numSessions int
 	var total time.Duration
-	fmt.Printf("Report on '%s' (in %s)%s:\n", client, getTZContext(), limited)
+	fmt.Printf("Sessions on '%s' (in %s)%s:\n", client, getTZContext(), limited)
 	var punches []*CardSchema
 	numRecords := 0
 	for rows.Next() {
