@@ -44,12 +44,36 @@ func subCmdAmend(dbPath string, args []string) error {
 	}
 	defer db.Close()
 
-	// TODO make this interactive (with a -q(uiet) flag to not ask)
+	noteAction := "update"
+	if isDeletion {
+		noteAction = "delete"
+	}
 
-	return fmt.Errorf(
-		"NOTE amendment not yet implemented, but got:\n\t Note: '%s'\n\tis deletion: %t\n\twhich: %s (@%s)\n",
-		note,
-		isDeletion,
-		target,
-		target.Unix())
+	stmt, e := db.Prepare(`
+		UPDATE punchcard
+		SET note = ?
+		WHERE punch = ?
+	;`)
+	if e != nil {
+		return fmt.Errorf("preparing db modification: %s", e)
+	}
+
+	// TODO make this interactive (with a -q(uiet) flag to not ask)
+	r, e := stmt.Exec(note, target.Unix())
+	if e != nil {
+		return fmt.Errorf("trying to %s note: %s", noteAction, e)
+	}
+	a, e := r.RowsAffected()
+	if e != nil {
+		return fmt.Errorf("trying to parse results of %s: %s", noteAction, e)
+	}
+
+	if a != 1 {
+		return fmt.Errorf("expected 1 punch record affected, but got %d", a)
+	}
+
+	fmt.Printf(
+		"Done: successfully %sd note on %s punch\n",
+		noteAction, target.Format(format_dateTime))
+	return nil
 }
