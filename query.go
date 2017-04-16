@@ -73,21 +73,7 @@ func queryClient(db *sql.DB, client string, from *time.Time) error {
 			numSessions++
 			total += session.Duration
 
-			outPunchFormat := "15:04:05.9999"
-			if session.Duration > time.Hour*22 {
-				outPunchFormat = "01-02" + outPunchFormat
-			}
-			fmt.Printf(fmt.Sprintf("%s%d%s", "%", durationToStrMaxLen, "s from %s to %s"),
-				session.durationToStr(),
-				session.StartAt.Format("2006-01-02 15:04:05.99999"),
-				session.StopAt.Format(outPunchFormat))
-			if len(session.NoteStart) > 0 {
-				fmt.Printf(" %s", session.NoteStart)
-			}
-			if len(session.NoteStop) > 0 {
-				fmt.Printf(" %s", session.NoteStop)
-			}
-			fmt.Printf("\n")
+			fmt.Printf("%s\n", session)
 		}
 
 		punches = append(punches, card)

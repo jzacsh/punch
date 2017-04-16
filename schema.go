@@ -119,6 +119,33 @@ func (from *CardSchema) toSession(to *CardSchema) *Session {
 	}
 }
 
+func (s *Session) String() string {
+	format := fmt.Sprintf("%s%d%s", "%", durationToStrMaxLen, "s from %s to %s%s")
+
+	outPunchFormat := "15:04:05.9999"
+	if s.Duration > time.Hour*22 {
+		outPunchFormat = "01-02" + outPunchFormat
+	}
+
+	var notes string
+	if len(s.NoteStart) > 0 {
+		notes = fmt.Sprintf(" %s", s.NoteStart)
+	}
+	if len(s.NoteStop) > 0 {
+		var separator string
+		if len(s.NoteStart) > 0 {
+			separator = ";"
+		}
+		notes += fmt.Sprintf("%s %s", separator, s.NoteStop)
+	}
+
+	return fmt.Sprintf(format,
+		s.durationToStr(),
+		s.StartAt.Format(format_dateTime),
+		s.StopAt.Format(outPunchFormat),
+		notes)
+}
+
 ///////////////////////////////////////////////////////////
 // Not *our* schema, but schema manipulation nonetheless...
 
