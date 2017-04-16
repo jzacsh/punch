@@ -276,6 +276,8 @@ func subCmdDelete(dbPath string, args []string) error {
 		return nil
 	}
 
+	// TODO make this interactive (with a -q(uiet) flag to not ask)
+
 	if cmd.isTargetingBill() {
 		if _, e := stmt.Exec(cmd.Client, cmd.At.Unix()); e != nil {
 			return e

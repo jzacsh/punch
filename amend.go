@@ -44,6 +44,8 @@ func subCmdAmend(dbPath string, args []string) error {
 	}
 	defer db.Close()
 
+	// TODO make this interactive (with a -q(uiet) flag to not ask)
+
 	return fmt.Errorf(
 		"NOTE amendment not yet implemented, but got:\n\t Note: '%s'\n\tis deletion: %t\n\twhich: %s (@%s)\n",
 		note,
