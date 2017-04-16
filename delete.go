@@ -170,7 +170,7 @@ func (d *DeleteCmd) Report(db *sql.DB) (punchOut int64, _ error) {
 
 			if count != 0 {
 				return punchOut, fmt.Errorf(
-					"Re-opening work session with new sessions opened since will cause data inconsistency (%d punches found since). HINT: to delete an ENTIRE session, delete its punch-IN time.", count)
+					"re-opening work session with new sessions opened since will cause data inconsistency (%d punches found since). HINT: to delete an ENTIRE session, delete its punch-IN time.", count)
 			}
 
 			fmt.Printf(
