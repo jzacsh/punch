@@ -180,6 +180,11 @@ func queryDump(db *sql.DB) error {
 		}
 	}
 
+	if longestProjectStr == 0 {
+		return fmt.Errorf("zero punch-card records found")
+	}
+
+	// Summarize above dump
 	fmt.Printf("\nProject, Sessions, Status, Worked Time\n")
 	for project, sessions := range sessionsFor {
 		var total time.Duration
