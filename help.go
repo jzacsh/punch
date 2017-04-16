@@ -141,10 +141,13 @@ func helpCmdQuery(cliOnly bool) string {
 func helpSectionCommands() string {
 	return fmt.Sprintf(`COMMANDS
   One of the below sub-commands is expected, otherwise "query %s" is assumed.
+
   h|help [COMMAND]
+
     Prints help documentation just for one of the below commands per COMMAND.
     Otherwise prints all documentation. All of -h, --h, h just print a brief CLI
     pseudo-grammar doc.
+
 %s
 %s
 %s
