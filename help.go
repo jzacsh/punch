@@ -279,6 +279,7 @@ func subCmdHelp(firstArgChars string, args []string) {
 				case "a", "amend":
 					helpDoc = helpCmdAmend(false /*cliOnly*/)
 				}
+				helpDoc += "\n  See --help without arguments to see full doc.\n"
 			}
 		}
 	}
