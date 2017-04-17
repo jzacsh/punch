@@ -23,7 +23,7 @@ func ensureUserWantsAutocreation(dbPath string) error {
 	}
 	response := strings.TrimSpace(nextLine)
 	if len(response) < 1 || strings.ToLower(string(response[0])) != "y" {
-		return errors.New("auto-creation offer rejected")
+		return errors.New("auto-creation offer not accepted")
 	}
 	return nil
 }
