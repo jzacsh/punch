@@ -9,8 +9,11 @@ import (
 	"strings"
 )
 
-// NOTE: all defined at build time
-var VersionDate, VersionRef, VersionUrl, AppName string
+var VersionUrl, VersionRef, VersionDate string
+
+const AppName string = "punch"
+
+// NOTE: all above defined at build time
 
 const dbEnvVar string = "PUNCH_CARD"
 
@@ -177,6 +180,17 @@ func helpSectionCommands() string {
 
 // Environment & Examples
 func helpSectionFooter() string {
+	var buildInfo string
+	if len(VersionDate) < 1 || len(VersionRef) < 1 || len(VersionUrl) < 1 {
+		buildInfo = "This binary not built with its usual tool, build data unavailable."
+	} else {
+		buildInfo = fmt.Sprintf(`This binary built %s at git ref %s.
+
+  To see the source for this program and a full copy of its license, see:
+    %s
+		`, VersionDate, VersionRef, VersionUrl)
+	}
+
 	return fmt.Sprintf(`ENVIRONMENT
   Work clock is an SQLite3 database file path, which is expected to be in $%s
   environment variable.
@@ -201,10 +215,8 @@ EXAMPLES
    1492214400 # perfect unix timestamp in seconds
 
 BUILD INFORMATION
-  This binary built %s at git ref %s.
-  To see the source for this program and a full copy of its license, see:
-    %s
-`, dbEnvVar, queryDefaultCmd, VersionDate, VersionRef, VersionUrl)
+  %s
+`, dbEnvVar, queryDefaultCmd, buildInfo)
 }
 
 func helpManual() string {
