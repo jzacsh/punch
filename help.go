@@ -134,9 +134,12 @@ func helpCmdQuery(cliOnly bool) string {
     furthest boundary back to fetch records. See DATE(1) under EXAMPLES for more
     on timestamps.
   - status: prints running-time on any currently punched-into projects.
-  - bills [CLIENT ...]: prints report of payperiod under all CLIENT names.
+  - bills [-last] [CLIENT ...]: prints report of payperiod under all CLIENT names.
     If CLIENT is not provided, prints report consecutively for each CLIENT
-    returned by "query list"`
+    returned by "query list"
+    If -last is provided, prints the scripting-friendly end-timestamp (and its
+    human-readable rendering) of the most recent payperiod found for CLIENT.
+    This option requires that exactly one CLIENT be provided.`
 	}
 	return fmt.Sprintf("  q|query    [QUERY...]\n%s\n", queryHelp)
 }

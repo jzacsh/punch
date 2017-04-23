@@ -259,7 +259,7 @@ func hack_queryPaychecksIn(db *sql.DB, clients []string) (*sql.Rows, error) {
 	return db.Query(query)
 }
 
-func queryBills(db *sql.DB, clients []string) error {
+func queryBills(db *sql.DB, args []string) error {
 	// TODO(zacsh) make this a JOIN and fetch all the punches within a
 	// {end,start}clusive, and include amount of time worked in this report
 	//   SELECT *
@@ -269,25 +269,49 @@ func queryBills(db *sql.DB, clients []string) error {
 	//   AND p.startclusive < c.punch
 	//   AND p.endclusive > c.punch;
 
+	isForLast := false
+	clients := args
+	if len(args) > 0 && strings.TrimSpace(args[0]) == "-last" {
+		isForLast = true
+		clients = args[1:]
+	}
+
+	if isForLast && len(clients) != 1 {
+		return fmt.Errorf("exactly one CLIENT required with -last option")
+	}
+
 	rows, e := hack_queryPaychecksIn(db, clients)
 	if e != nil {
 		return e
 	}
 	defer rows.Close()
 
-	foundPayPeriod := false
-	fmt.Printf("Billed, From (%s), To, Note\n", getTZContext())
+	var bills []*BillSchema
 	for rows.Next() {
 		b, e := scanToBill(rows)
 		if e != nil {
 			return e
 		}
-		foundPayPeriod = true
-		fmt.Println(b.String(false /*showTimezone*/))
+		bills = append(bills, b)
 	}
-	if !foundPayPeriod {
-		fmt.Printf("No pay-periods closed, yet.\n")
+
+	if len(bills) == 0 {
+		return fmt.Errorf("no pay-periods closed, yet")
 	}
+
+	if isForLast {
+		lastBill := bills[len(bills)-1]
+		fmt.Printf(
+			"%d\t%s\n",
+			lastBill.Endclusive.Unix(),
+			lastBill.Endclusive.Format(format_dateTime))
+	} else {
+		fmt.Printf("Billed, From (%s), To, Note\n", getTZContext())
+		for _, b := range bills {
+			fmt.Println(b.String(false /*showTimezone*/))
+		}
+	}
+
 	return nil
 }
 
@@ -307,11 +331,11 @@ func subCmdQuery(dbInfo os.FileInfo, dbPath string, args []string) error {
 
 	switch subCmd {
 	case "bill", "bills":
-		var clients []string
+		var queryBillArgs []string
 		if len(args) > 1 {
-			clients = args[1:]
+			queryBillArgs = args[1:]
 		}
-		return queryBills(db, clients)
+		return queryBills(db, queryBillArgs)
 	case "status":
 		return queryStatus(db)
 	case "list":

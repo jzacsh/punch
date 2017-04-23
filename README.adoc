@@ -38,7 +38,7 @@ None the less, if I do anything next, hopefully it'll be one of the below:
 . cleanup original <<rewrite, bash-era>> code left behind as of `{gorewrite_end}`
 .. [line-through]#remove the original `./bin/punch` itself#
 .. replace or remove `./bin/screen_sleep` helper script
-.. replace or remove `./Payperiod/` helper
+.. [line-through]#replace or remove `./Payperiod/` helper#
 . *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
 
 [[dbschema]]
