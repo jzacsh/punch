@@ -6,6 +6,8 @@
 :punchsh_follow: https://github.com/jzacsh/bin/commit/021340fcdde241080206f
 :batsexec: https://gist.github.com/jzacsh/65fb4df01e3dbf23a2a4#file-test-sh
 :gotestingmain: https://golang.org/pkg/testing/#hdr-Main
+:gorewrite_gisturl: https://gist.github.com/jzacsh/0f09b34e45211e76172362c10f437cd3
+:git_merge_cmd: git merge --log --strategy=recursive -Xtheirs gistgolang/master
 
 `punch` simply manages an <<dbschema, Sqlite3 time-tracking table>> that helps
 me record hours spent on various tasks. This repo is a golang <<rewrite, rewrite>>
@@ -111,5 +113,6 @@ already a thousand lines of bash 4 without test coverage]).
 
 I ported footnoteref:[gorewrite] to golang _partly_ because that much
 footnoteref:[bashpunch] Bash scares me now-a-days, _partly_ because I wanted an
-excuse to play with golang, _partly_ because I wanted to veg out on Spring break
-while back in my undergrad.
+excuse to play with golang, _partly_ because I wanted to veg out
+footnoteref:[gistport, rewrite was from scratch in {gorewrite_gisturl}[a gist]
+and merged into this repo with `{git_merge_cmd}`] on Spring break while back in my undergrad.
