@@ -74,6 +74,7 @@ None the less, if I do anything next, hopefully it'll be one of the below:
 
 [[TODO]]
 .TODO
+. track own copy of dependencies, in this repo
 . add debugging flag that:
 .. print all SQL statements before they run
 .. tackles TODOs beside `stmt.Exec(...)` calls that drop debug info on the floor
