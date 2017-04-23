@@ -1,4 +1,5 @@
 = `Punch` in Golang
+:toc:
 :gorewrite_start: 795c79a537f9fe082188ccd94cebcf549962c589
 :gorewrite_end: 1b628b4912a942949fb7167b4851e69668593c83
 :punchsh_newest: https://github.com/jzacsh/punch/blob/a1e40862a7203613cd6f0ccc331ac68f737ab329/bin/punch
