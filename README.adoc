@@ -1,10 +1,16 @@
 = `Punch` in Golang
-:punchsh: https://github.com/jzacsh/punch/tree/a1e40862a7
+:gorewrite_start: 795c79a537f9fe082188ccd94cebcf549962c589
+:gorewrite_end: 1b628b4912a942949fb7167b4851e69668593c83
+:punchsh_newest: https://github.com/jzacsh/punch/blob/a1e40862a7203613cd6f0ccc331ac68f737ab329/bin/punch
+:punchsh_oldest: https://github.com/jzacsh/bin/commit/f7fbddec97ad9f9bade2ca69e3d531b99b52dbc4
+:punchsh_follow: https://github.com/jzacsh/bin/commit/021340fcdde241080206f
 :batsexec: https://gist.github.com/jzacsh/65fb4df01e3dbf23a2a4#file-test-sh
 
-See original punch implementation here:
-  {punchsh}[`bin/punch` script of github.com/jzacsh/punch]
-_(a thousand lines of bash 4 without test coverage)_
+`punch` simply manages an <<dbschema, Sqlite3 time-tracking table>> that helps
+me record hours spent on various tasks. This repo is a golang <<rewrite, rewrite>>
+footnoteref:[gorewrite, from `{gorewrite_start}` to `{gorewrite_end}`] of the
+Bash script that managed that sqlite table, using a nearly identical command-line
+API.
 
 == Development
 
@@ -23,15 +29,71 @@ $ export PUNCH_CARD=./sample.card
 $ ./punch # will now be happy, having a usable card
 ----
 
-== Status
+=== Status
 
-Intentions: I'm currently writing this for fun on spring break, because I miss
-writing code. No idea if I have any plans to ever finish this.
-
-
-As of git tag `v0.payperiod.write` the `query` and `punch` and `bill`
-subcommands are basically complete, and implement all the features I've actively
-been utilizng in the {punchsh}[bash implementation of punch].
+Punch is complete: it does what I need and I likely won't add anything to it.
+None the less, if I do anything next, hopefully it'll be one of the below:
 
 .TODO
+. cleanup original <<rewrite, bash-era>> code left behind as of `{gorewrite_end}`
+.. remove the original `./bin/punch` itself
+.. replace or remove `./bin/screen_sleep` helper script
+.. replace or remove `./Payperiod/` helper
 . *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
+
+[[dbschema]]
+== Data `Punch` Manages
+
+`punch` is primarily concerned with one table: `punchcard`, but also has a
+feature that relies on a smaller extra table called `paychecks`
+
+NOTE: Trust the `INSERT` SQL statements in `create.go` over this documentation
+of punch's underlying schema.
+
+.`punchcard`: tracks sessions working on something
+[options="header"]
+|====
+| field name | type | required | notes
+
+| `punch` | integer | required | primary key; UNIX timestamp in seconds
+| `status` | integer | required |
+  always `1` or `0`, ie: pseudo Boolean footnoteref:[punchstatus, code would
+  likely be a lot simpler if I'd not <<rewrite, ported>> this over and just had
+  inferred its equivalent meaning at run-time... oh well]
+| `project` | integer | required | not primary footnoteref:[punchprimkey,
+  'project' _should_ be included in primary key constraint along with 'punch'
+  but it isn't]
+| `note` | string | optional | free-form, user-composed string
+|====
+
+.`paychecks`: tracks bills sent per blocks of `punchcard` sessions
+[options="header"]
+|====
+| field name | type | required | attributes
+
+| `startclusive` | int | required |
+  Unix timestamp in seconds to include in this billing period
+| `endclusive` | int | required |
+  End-boundary version of 'startclusive'. +
+  Note: both fields will only ever _incidentally_ match a "punch" value of the
+  `punchcard` table
+| `project` | string | required | foreign key to `punchcard`
+| `note` | string | optional | free-form, user-composed string
+|====
+
+
+== Strange Project, Strange Git History
+
+[[rewrite]]
+.WhyTF Does `punch` Exist? Why'd You Write it Twice??
+Originally `punch` was a Bash script I wrote years ago "_{punchsh_oldest}[to
+learn how to use `getopts`]_". I finished it, forgot about it, then actually
+started using it to track freelance hours, at which point the script was working
+fine (if a little frightening footnoteref:[bashpunch, the
+{punchsh_newest}[`bin/punch` script] that I ultimately ported to golang was
+already a thousand lines of bash 4 without test coverage]).
+
+I ported footnoteref:[gorewrite] to golang _partly_ because that much
+footnoteref:[bashpunch] Bash scares me now-a-days, _partly_ because I wanted an
+excuse to play with golang, _partly_ because I wanted to veg out on Spring break
+while back in my undergrad.
