@@ -36,7 +36,7 @@ If/when I ever want to share this logic outside of the CLI, this should allow me
 to refactor all of `main` pkg's generic logic into a top-level library.
 
 .tests?
-Nope, but it's a <<TODO>>. I plan to write e2e tests with bash. The `punch` cmd
+Nope, but it's a <<TODO>>. I'd like to write e2e tests with bash. The `punch` cmd
 starts at `cli.go`. For testing, I'm imagining having an alternative wrapper
 *before* to `func main()` of `cli.go` {gotestingmain}[where I can take the
 opportunity to pollute the environment] with a mock-clock `import`, and set its
