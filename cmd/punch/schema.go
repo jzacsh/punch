@@ -1,16 +1,31 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 )
 
+// see: https://marcesher.com/2014/10/13/go-working-effectively-with-database-nulls/
+func toNullString(optional string) sql.NullString {
+	value := strings.TrimSpace(optional) // pertinent specifically to punch schemas
+	return sql.NullString{String: value, Valid: len(value) != 0}
+}
+
+// see: https://marcesher.com/2014/10/13/go-working-effectively-with-database-nulls/
+func fromNullString(optional sql.NullString) string {
+	if !optional.Valid {
+		return "" // golang zero-value
+	}
+	return optional.String
+}
+
 type BillSchemaSQL struct {
 	Endclusive   int // primary key
 	Startclusive int
 	Project      string
-	Note         string //optional
+	Note         sql.NullString
 }
 
 func (b *BillSchemaSQL) toBill() *BillSchema {
@@ -18,7 +33,7 @@ func (b *BillSchemaSQL) toBill() *BillSchema {
 		Endclusive:   time.Unix(int64(b.Endclusive), 0 /*nanoseconds*/),
 		Startclusive: time.Unix(int64(b.Startclusive), 0 /*nanoseconds*/),
 		Project:      b.Project,
-		Note:         b.Note,
+		Note:         fromNullString(b.Note),
 	}
 }
 
@@ -27,7 +42,7 @@ func (b *BillSchema) toSQL() *BillSchemaSQL {
 		Endclusive:   int(b.Endclusive.Unix()),
 		Startclusive: int(b.Startclusive.Unix()),
 		Project:      b.Project,
-		Note:         b.Note,
+		Note:         toNullString(b.Note),
 	}
 }
 
@@ -59,7 +74,7 @@ type CardSchemaSQL struct {
 	Punch   int // unix stamp seconds; primary key
 	Status  int // (pseudo-boolean) 1,0
 	Project string
-	Note    string // optional
+	Note    sql.NullString
 }
 
 type CardSchema struct {
@@ -82,7 +97,7 @@ func buildCardSQL(isPunchIn bool, client string, note string) *CardSchemaSQL {
 		Punch:   int(time.Now().Unix()),
 		Status:  punchAsInt,
 		Project: client,
-		Note:    note,
+		Note:    toNullString(note),
 	}
 }
 
@@ -97,7 +112,7 @@ func (raw *CardSchemaSQL) toCard() *CardSchema {
 		Punch:   time.Unix(int64(raw.Punch), 0 /*nanoseconds*/),
 		IsStart: raw.Status == 1,
 		Project: raw.Project,
-		Note:    strings.TrimSpace(raw.Note),
+		Note:    strings.TrimSpace(fromNullString(raw.Note)),
 	}
 }
 
