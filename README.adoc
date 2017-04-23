@@ -15,6 +15,27 @@ footnoteref:[gorewrite, from `{gorewrite_start}` to `{gorewrite_end}`] of the
 Bash script that managed that sqlite table, using a nearly identical command-line
 API.
 
+== Quick Start
+
+.quick installation
+----
+$ go get github.com/jzacsh/punch/cmd/punch
+----
+Alternatively, to build `punch` with a custom name and/or have version info
+built into the binary, use the output of `make` _(in dev steps below)._
+
+.usage: `$PUNCH_CARD` environment variable required
+----
+$ export PUNCH_CARD="$HOME"/punchcard # or wherever you'd like it to live
+$ echo 'export PUNCH_CARD="$HOME"/punchcard' >> ~/.bashrc
+----
+For first-time usage: `punch` will offer to automatically create the database at
+`$PUNCH_CARD`, so long as the environment variable isn't empty.
+
+.commands: docs are built into the binary
+`punch h` for a quick command pattern listing, or the `--help` for full the doc
+_(this includes a section of example commands)_.
+
 == Development
 
 .prerequisites
