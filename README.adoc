@@ -35,10 +35,6 @@ Punch is complete: it does what I need and I likely won't add anything to it.
 None the less, if I do anything next, hopefully it'll be one of the below:
 
 .TODO
-. cleanup original <<rewrite, bash-era>> code left behind as of `{gorewrite_end}`
-.. [line-through]#remove the original `./bin/punch` itself#
-.. replace or remove `./bin/screen_sleep` helper script
-.. [line-through]#replace or remove `./Payperiod/` helper#
 . *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
 
 [[dbschema]]

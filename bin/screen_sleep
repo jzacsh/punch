@@ -2,9 +2,9 @@
 #
 # Punch out of active sessions (or in if $1=in).
 #   $2=--force   Causes potential headless activity to be ignored
-set -e
+set -eou pipefail
 
-if [[ $# -eq 2 ]] && [[ $2 = --force ]];then
+if [[ "$#" -eq 2 ]] && [[ "$2" = --force ]];then
   declare -r shouldForce=1
 else
   declare -r shouldForce=0
@@ -33,40 +33,16 @@ declare -r mode="$1"
   exit 1
 }
 
-# $1='long note string'
-autoNote() (
-  local parts origNote=''
-  if [ -n "${1/ */}" ];then
-    parts="$(printf '%s\n' "$1")"
-    origNote="${parts[1]}"
-  fi
+autoNote() ( printf 'auto punching %s' "$mode"; )
 
-  local note=''
-  case "$mode" in
-    'out')
-      if [ -n "$origNote" ];then
-        note="$(printf ' (punch-in note was: "%s")' "$origNote")"
-      fi
-      printf 'auto punching out%s' "$note"
-      ;;
-    'in')
-      if [ -n "$origNote" ];then
-        note="$(printf ' (original punch-in note was: "%s")' "$origNote")"
-      fi
-      printf 'auto punching back in%s' "$note"
-      ;;
-  esac
-)
-
-isPunchedInto() ( punch -seq 2>&1 | grep "$1" >/dev/null 2>&1; )
+isPunchedInto() ( punch 2>/dev/null | grep -E "^${1}\:\s" >/dev/null 2>&1; )
 
 humanPunch() (
   # punch's schema set's the punch stamps as unique; so we must behave a little
   # more human in this script
   sleep 1
 
-  local p="$1"; shift
-  punch -p -c "$p" "$@"
+  punch punch "$1" -n "$(autoNote)"
 )
 
 maybeBailForHeadlessActivity() (
@@ -75,7 +51,7 @@ maybeBailForHeadlessActivity() (
   printf \
     'Potentially active work in `tmux` (%s sessions attached)\n\t' \
     "$attachedSessions" >&2
-  if [[ $shouldForce -eq 1 ]];then
+  if [[ "$shouldForce" -eq 1 ]];then
     printf 'IGNORING said tmux sessions due to --force\n' >&2
   else
     printf 'EXITING incase said activity would be cut-off\n' >&2
@@ -83,25 +59,27 @@ maybeBailForHeadlessActivity() (
   fi
 )
 
-if [ "$mode" = out ];then
-  punch -se >/dev/null 2>&1 || exit 0 # not punched into anything
+if [[ "$mode" = out ]];then
+  punch >/dev/null 2>&1 || exit 0 # not punched into anything
 
   maybeBailForHeadlessActivity
 
-  punch -se | while read project stamp optNote;do
-    printf '%s\t%s\n' "$project" "$stamp" >> "$autoOutData"
-    humanPunch "$project" "$(autoNote "$optNote")"
+  punch | while read p duration _;do
+    project="${p/:/}"
+    printf '%s\t%s\n' "$project" "$(date +%s)" >> "$autoOutData"
+    humanPunch "$project"
   done
-elif [ "$mode" = 'in' ];then
+elif [[ "$mode" = in ]];then
   maybeBailForHeadlessActivity
   while read project stamp;do
     if isPunchedInto "$project";then
       printf \
-        'WARNING: already punched into "%s" (orginal punch-in at %s)\n' \
+        'WARNING: already punched into "%s" (orginal auto punch-out at @%s)\n' \
         "$project" "$stamp" >&2
       continue
     fi
-    humanPunch "$project" "$(autoNote)"
+    humanPunch "$project"
   done < "$autoOutData"
+
   echo -n > "$autoOutData"
 fi
