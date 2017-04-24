@@ -1,0 +1,27 @@
+{
+	"ImportPath": "github.com/jzacsh/punch",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Packages": [
+		"./cmd/punch"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Comment": "v1.2.0-80-gcf7286f",
+			"Rev": "cf7286f069c3ef596efcc87781a4653a2e7607bd"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh/terminal",
+			"Rev": "96846453c37f0876340a66a47f3f75b1f3a6cd2d"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "d212a1ef2de2f5d441c327b8f26cf3ea3ea9f265"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "ea9bcade75cb975a0b9738936568ab388b845617"
+		}
+	]
+}
