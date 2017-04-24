@@ -74,7 +74,6 @@ None the less, if I do anything next, hopefully it'll be one of the below:
 .TODO
 . building upon `query -last`: report on duration accrued (ie: in `punchcard`
   table) since `-last` value (per `paychecks` table)
-. track own copy of dependencies, in this repo
 . add debugging flag that:
 .. print all SQL statements before they run
 .. tackles TODOs beside `stmt.Exec(...)` calls that drop debug info on the floor
