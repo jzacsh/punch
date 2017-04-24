@@ -46,13 +46,16 @@ $ go get github.com/mattn/go-sqlite3
 
 `make punch` to build. no tests written, yet.
 
-.helpful testing punchcard
+.helpful reference punchcard
 ----
 $ cd cmd/punch
 $ make
 $ ./punch # will throw error without a $PUNCH_CARD
+
 $ export PUNCH_CARD=./testdata/sample.card
-$ ./punch # will now be happy, having a usable card
+
+# can now edit, build, manually test results without upsetting `punch`
+$ $EDIT *.go; make; ./punch
 ----
 
 .why the `./cmd/punch` hierarchy?
@@ -60,13 +63,7 @@ If/when I ever want to share this logic outside of the CLI, this should allow me
 to refactor all of `main` pkg's generic logic into a top-level library.
 
 .tests?
-Nope, but it's a <<TODO>>. I'd like to write e2e tests with bash. The `punch` cmd
-starts at `cli.go`. For testing, I'm imagining having an alternative wrapper
-*before* to `func main()` of `cli.go` {gotestingmain}[where I can take the
-opportunity to pollute the environment] with a mock-clock `import`, and set its
-time to whatever is passed on the commandline for testing _(eg: if the
-test-punch binary is called with '1234' then '1234' wil be what it the rest of
-`punch` sees as `time.Now()`)_
+Nope, but it's a <<TODO>>
 
 === Status
 
@@ -81,8 +78,16 @@ None the less, if I do anything next, hopefully it'll be one of the below:
 . add debugging flag that:
 .. print all SQL statements before they run
 .. tackles TODOs beside `stmt.Exec(...)` calls that drop debug info on the floor
-. *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
-
+. *test coverage* either, or both of:
+.. *unit tests*; eg: flooding `main` pkg w/multiple `*_test.go` files, just as
+   that package already does with its current division of logic
+.. *e2e testing*; eg: using my {batsexec}[drop-in script `test.sh` from BATS]
+   footnoteref:[e2emocking, The `punch` cmd starts at `cli.go`. I'm imagining
+   having an alternative wrapper *before* to `func main()` of `cli.go`
+   {gotestingmain}[where I can take the opportunity to pollute the environment]
+   with a mock-clock `import` and set its time to whatever is passed on the
+   commandline for testing _(eg: if the test-punch binary is called with '1234'
+   then '1234' wil be what it the rest of `punch` sees as `time.Now()`)_]
 
 [[dbschema]]
 == Data `Punch` Manages
