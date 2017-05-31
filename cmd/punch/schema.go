@@ -160,11 +160,3 @@ func (s *Session) String() string {
 		s.StopAt.Format(outPunchFormat),
 		notes)
 }
-
-///////////////////////////////////////////////////////////
-// Not *our* schema, but schema manipulation nonetheless...
-
-func isEmptyTime(t *time.Time) bool {
-	var defaultTime time.Time
-	return t.Sub(defaultTime) == 0
-}

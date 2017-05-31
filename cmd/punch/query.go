@@ -31,7 +31,7 @@ func scanToBill(rows *sql.Rows) (*BillSchema, error) {
 
 func queryClient(db *sql.DB, client string, from *time.Time) error {
 	var fromStamp int64
-	if !isEmptyTime(from) {
+	if !from.IsZero() {
 		fromStamp = from.Unix()
 	}
 
@@ -47,7 +47,7 @@ func queryClient(db *sql.DB, client string, from *time.Time) error {
 	defer rows.Close()
 
 	var limited string
-	if !isEmptyTime(from) {
+	if !from.IsZero() {
 		limited = fmt.Sprintf(" from %s", from.Format(format_dateTime))
 	}
 
@@ -91,11 +91,11 @@ func queryClient(db *sql.DB, client string, from *time.Time) error {
 		fmt.Printf("Summary: Worked %s over %d sessions\n", total, numSessions)
 	} else {
 		var fromClause string
-		if !isEmptyTime(from) {
+		if !from.IsZero() {
 			fromClause = fmt.Sprintf(" in the past %s", time.Since(*from))
 		}
 		whatNotFound := "sessions"
-		if len(punches) == 0 && isEmptyTime(from) {
+		if len(punches) == 0 && from.IsZero() {
 			whatNotFound = "records" // we found _NOTHING_ and no FROM clause passed
 		}
 		fmt.Printf("Warning: no %s found for this client%s.\n", whatNotFound, fromClause)
