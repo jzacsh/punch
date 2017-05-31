@@ -64,6 +64,8 @@ func isValidClient(clientStr string) bool {
 		return false
 	}
 
-	isAlphaNumeric := regexp.MustCompile("^([[:alpha:]]|[[:digit:]])+$")
-	return isAlphaNumeric.MatchString(clientStr)
+	alphaOrNumeric := "[[:alpha:]]|[[:digit:]]"
+	validRegexp := regexp.MustCompile(fmt.Sprintf(
+		"^(%s)+(-*%s)*(_*%s)*$", alphaOrNumeric, alphaOrNumeric, alphaOrNumeric))
+	return validRegexp.MatchString(clientStr)
 }
