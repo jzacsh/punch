@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -10,6 +12,15 @@ const format_dateTime string = "2006-01-02 15:04:05"
 
 func (s *Session) durationToStr() string {
 	return durationToStr(s.Duration)
+}
+
+// TODO(zacsh) dry up places where this is done by hand
+func parseStampCommand(cmd string) (time.Time, error) {
+	stamp, e := strconv.ParseInt(strings.TrimSpace(cmd), 10, 64)
+	if e != nil {
+		return time.Time{}, fmt.Errorf("stamp arg: %s", e)
+	}
+	return time.Unix(stamp, 0 /*nanoseconds*/), nil
 }
 
 const durationToStrMaxLen = 20
