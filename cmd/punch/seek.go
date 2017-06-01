@@ -74,7 +74,7 @@ func subCmdSeek(dbPath string, args []string) error {
 	defer db.Close()
 
 	if cmd.isClose() {
-		if cmd.SeekTo.Unix() <= cmd.StillOpen.Unix() {
+		if cmd.SeekTo.Before(cmd.StillOpen) {
 			return fmt.Errorf("SEEK_TO <= STILL_OPEN creates empty session")
 		}
 		rows, e := db.Query(`
