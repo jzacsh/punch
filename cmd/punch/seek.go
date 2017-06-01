@@ -166,10 +166,16 @@ func seekExistingPunchOut(db *sql.DB, cmd *SeekCmd) error {
 
 	var punchIn *CardSchema
 	for rows.Next() {
-		punchIn, e = scanToCard(rows)
+		card, e := scanToCard(rows)
 		if e != nil {
 			return fmt.Errorf("reading FAULTY_STAMP's session cards: %s", e)
 		}
+
+		if punchIn != nil {
+			panic("Despite SQL `LIMIT 1`, got multiple records")
+		}
+
+		punchIn = card
 	}
 	if punchIn == nil {
 		return fmt.Errorf("bad data state: no open punch to FAULTY_STAMP's close")
