@@ -2,7 +2,7 @@
 
 __punchClientCompletion() {
   local subcmds
-  declare -r subcmds='punch bill query delete amend help'
+  declare -r subcmds='punch bill query delete amend seek help'
 
   if (( COMP_CWORD == 1 ));then
     COMPREPLY=( $(compgen -W "-h $subcmds" -- "${COMP_WORDS[$COMP_CWORD]}") )

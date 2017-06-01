@@ -102,6 +102,11 @@ func main() {
 			fmt.Fprintf(os.Stderr, "amend failed: %s\n", e)
 			os.Exit(1)
 		}
+	case "s", "seek":
+		if e := subCmdSeek(dbPath, os.Args[2:]); e != nil {
+			fmt.Fprintf(os.Stderr, "seek failed: %s\n", e)
+			os.Exit(1)
+		}
 	default:
 		fmt.Fprintf(os.Stderr,
 			"valid sub-command required (ie: not '%s'); try --h for usage\n", os.Args[1])

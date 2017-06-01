@@ -19,7 +19,7 @@ const dbEnvVar string = "PUNCH_CARD"
 
 const queryDefaultCmd string = "status"
 
-const helpCliPattern string = "punch [punch|bill|query|delete|amend] [...]"
+const helpCliPattern string = "punch [punch|bill|query|delete|amend|seek] [...]"
 const helpDoesWhat string = "Logs & reports time worked on any project"
 
 func isSubCmd(str string) bool {
@@ -27,7 +27,8 @@ func isSubCmd(str string) bool {
 		str == "bill" ||
 		str == "q" || str == "query" ||
 		str == "d" || str == "delete" ||
-		str == "a" || str == "amend"
+		str == "a" || str == "amend" ||
+		str == "s" || str == "seek"
 }
 
 // Name, synopsis, description
@@ -158,6 +159,21 @@ func helpCmdAmend(cliOnly bool) string {
 	return fmt.Sprintf("  a|amend    TARGET_STAMP [NOTE]\n%s\n", amendHelp)
 }
 
+func helpCmdSeek(cliOnly bool) string {
+	var seekHelp string
+	if !cliOnly {
+		seekHelp = `
+    Allows changing a faulty punch-out stamp, FAULTY_STAMP, to the timestamp
+    SEEK_TO.
+
+    Passing -c indicates SEEK_TO is Closing a still-open session whose punch-in
+    is the timestamp STILL_OPEN.
+
+    If -d is passed, "dry-run", no changes will be made.`
+	}
+	return fmt.Sprintf("  s|seek  [-d] SEEK_TO  FAULTY_STAMP | -c STILL_OPEN\n%s\n", seekHelp)
+}
+
 // Subcommands
 func helpSectionCommands() string {
 	return fmt.Sprintf(`COMMANDS
@@ -173,12 +189,14 @@ func helpSectionCommands() string {
 %s
 %s
 %s
+%s
 %s`, queryDefaultCmd,
 		helpCmdPunch(false /*cliOnly*/),
 		helpCmdBill(false /*cliOnly*/),
 		helpCmdDelete(false /*cliOnly*/),
 		helpCmdQuery(false /*cliOnly*/),
-		helpCmdAmend(false /*cliOnly*/))
+		helpCmdAmend(false /*cliOnly*/),
+		helpCmdSeek(false /*cliOnly*/))
 }
 
 // Environment & Examples
@@ -265,14 +283,15 @@ func maybePipeToPager(payload string) {
 
 // the tl;dr version of helpManual
 func helpCli() string {
-	return fmt.Sprintf("usage: %s\n  %s\n\n%s%s%s%s%sSee --help for more\n",
+	return fmt.Sprintf("usage: %s\n  %s%s\n\n%s%s%s%s%sSee --help for more\n",
 		helpCliPattern,
 		helpDoesWhat,
 		helpCmdPunch(true /*cliOnly*/),
 		helpCmdBill(true /*cliOnly*/),
 		helpCmdDelete(true /*cliOnly*/),
 		helpCmdQuery(true /*cliOnly*/),
-		helpCmdAmend(true /*cliOnly*/))
+		helpCmdAmend(true /*cliOnly*/),
+		helpCmdSeek(true /*cliOnly*/))
 }
 
 func subCmdHelp(firstArgChars string, args []string) {
@@ -293,6 +312,8 @@ func subCmdHelp(firstArgChars string, args []string) {
 					helpDoc = helpCmdDelete(false /*cliOnly*/)
 				case "a", "amend":
 					helpDoc = helpCmdAmend(false /*cliOnly*/)
+				case "s", "seek":
+					helpDoc = helpCmdSeek(false /*cliOnly*/)
 				}
 				helpDoc += "\n  See --help without arguments to see full doc.\n"
 			}
