@@ -72,6 +72,8 @@ None the less, if I do anything next, hopefully it'll be one of the below:
 
 [[TODO]]
 .TODO
+. take human-readable times as input; allow for `@` syntax for exact stamps,
+  like `date` does.
 . building upon `query -last`: report on duration accrued (ie: in `punchcard`
   table) since `-last` value (per `paychecks` table)
 . add debugging flag that:
