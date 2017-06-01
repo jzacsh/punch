@@ -117,6 +117,20 @@ func (raw *CardSchemaSQL) toCard() *CardSchema {
 	}
 }
 
+func (card *CardSchema) toSQL() *CardSchemaSQL {
+	var statusNum int
+	if card.IsStart {
+		statusNum = 1
+	}
+
+	return &CardSchemaSQL{
+		Punch:   int(card.Punch.Unix()),
+		Status:  statusNum,
+		Project: card.Project,
+		Note:    toNullString(strings.TrimSpace(card.Note)),
+	}
+}
+
 type Session struct {
 	StartAt   time.Time
 	StopAt    time.Time
