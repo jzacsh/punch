@@ -101,6 +101,7 @@ func buildCardSQL(isPunchIn bool, client string, note string) *CardSchemaSQL {
 	}
 }
 
+// TODO(zacsh) replace with `CardSchema{}` literal expression
 var emptyCard CardSchema
 
 func (c *CardSchema) isEmptyCard() bool {
