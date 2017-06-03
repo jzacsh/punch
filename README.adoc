@@ -12,7 +12,7 @@
 
 `punch` simply manages an <<dbschema, Sqlite3 time-tracking table>> that helps
 me record hours spent on various tasks. This repo is a golang <<rewrite, rewrite>>
-footnoteref:[gorewrite, from `{gorewrite_start}` to `{gorewrite_end}`] of the
+footnoteref:[gorewrite, from `{gorewrite_start}` to `{gorewrite_end}`] of a
 Bash script that managed that sqlite table, using a nearly identical command-line
 API.
 
